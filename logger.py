@@ -1,7 +1,14 @@
 from datetime import datetime
 
+MAX_LEN = 300  # prevent log abuse
+
+def _clean(value):
+    if value is None:
+        return ""
+    value = str(value).replace("\n", "\\n").replace("|", "/")
+    return value[:MAX_LEN]
+
 def log_attack(attacker_id, ip, endpoint, attack_type, payload, llm_response):
-    # Optional safety: never let attacker_id be empty
     if not attacker_id:
         attacker_id = "unknown"
 
@@ -9,13 +16,14 @@ def log_attack(attacker_id, ip, endpoint, attack_type, payload, llm_response):
 
     log_line = (
         f"{timestamp} | "
-        f"attacker_id={attacker_id} | "
-        f"ip={ip} | "
-        f"endpoint={endpoint} | "
-        f"attack_type={attack_type} | "
-        f"payload={payload} | "
-        f"llm_response={llm_response}\n"
+        f"attacker_id={_clean(attacker_id)} | "
+        f"ip={_clean(ip)} | "
+        f"endpoint={_clean(endpoint)} | "
+        f"attack_type={_clean(attack_type)} | "
+        f"payload={_clean(payload)} | "
+        f"llm_response={_clean(llm_response)}\n"
     )
 
     with open("attacks.log", "a", encoding="utf-8") as f:
         f.write(log_line)
+
