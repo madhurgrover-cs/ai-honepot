@@ -12,18 +12,14 @@ def get_attacker_id(request: Request):
         attacker_id = uuid.uuid4().hex
     return attacker_id
 
-# -------------------------------
-# SEARCH (SQLi)
-# -------------------------------
 @app.get("/search")
 async def search(request: Request, q: str = ""):
     attacker_id = get_attacker_id(request)
-    user_input = f"{q}&attacker_id={attacker_id}"
 
     result = generate_response(
         endpoint="/search",
-        attack_type="SQL Injection",
-        user_input=user_input
+        payload=q,
+        attacker_id=attacker_id
     )
 
     if result.lstrip().startswith("<!DOCTYPE html"):
@@ -34,18 +30,15 @@ async def search(request: Request, q: str = ""):
     response.set_cookie("attacker_id", attacker_id, httponly=True)
     return response
 
-# -------------------------------
-# ADMIN
-# -------------------------------
 @app.get("/admin")
 async def admin(request: Request):
     attacker_id = get_attacker_id(request)
-    user_input = f"{request.query_params}&attacker_id={attacker_id}"
+    payload = str(request.query_params)
 
     result = generate_response(
         endpoint="/admin",
-        attack_type="Recon",
-        user_input=user_input
+        payload=payload,
+        attacker_id=attacker_id
     )
 
     response = PlainTextResponse(content=result)
