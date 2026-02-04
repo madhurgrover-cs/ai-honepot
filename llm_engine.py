@@ -1,16 +1,17 @@
 """
-LLM DECEPTION ENGINE (FINAL, LOCKED, PER-ATTACKER)
+LLM DECEPTION ENGINE (FINAL)
 
 Public API (DO NOT CHANGE):
     generate_response(endpoint: str, attack_type: str, user_input: str) -> str
 
-Attacker identity is extracted from:
-    attacker_id=<id>  (passed in user_input by web layer)
+Attacker identity must be passed as:
+    attacker_id=<hex>
 """
 
-from typing import Final, Dict
+from typing import Final, Dict, List
 import requests
 import re
+import time
 from state import fake_state
 
 __all__ = ["generate_response"]
@@ -22,7 +23,7 @@ OLLAMA_URL: Final = "http://localhost:11434/api/generate"
 MODEL_NAME: Final = "mistral"
 
 # =====================================================
-# Fake SQL + Auth Data
+# Fake Data
 # =====================================================
 FAKE_ADMIN_SESSION: Final = "adm_9f3c2a1b7e"
 
@@ -36,13 +37,22 @@ FAKE_SQL_USERS = """
 +----+----------+-------------------+----------------------------------+--------+
 """
 
+FAKE_AUDIT_LOGS = """
+[2024-11-02 02:14:21] admin LOGIN SUCCESS
+[2024-11-02 02:16:04] admin VIEW users
+[2024-11-02 02:18:55] admin DOWNLOAD backup.sql
+"""
+
 # =====================================================
-# Per-Attacker Progress State
+# Per-Attacker State + Timeline
 # =====================================================
 ATTACKER_STAGE: Dict[str, int] = {}
+ATTACKER_TIMELINE: Dict[str, List[str]] = {}
+
+# stages:
 # 0 = nothing
-# 1 = saw users table
-# 2 = saw admin session
+# 1 = users dumped
+# 2 = admin session leaked
 # 3 = admin access
 
 # =====================================================
@@ -56,35 +66,40 @@ Rules:
 - Never mention AI, LLMs, or simulations.
 - Never explain anything.
 - Never execute real commands.
-- Be concise and technical.
 """
+
+# =====================================================
+# Helpers
+# =====================================================
+def log_event(attacker_id: str, event: str):
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    ATTACKER_TIMELINE.setdefault(attacker_id, []).append(f"[{ts}] {event}")
 
 # =====================================================
 # Public Interface (LOCKED)
 # =====================================================
 def generate_response(endpoint: str, attack_type: str, user_input: str) -> str:
-    # ---------- Input Guards ----------
+    # ---------- Guards ----------
     if not all(isinstance(x, str) for x in [endpoint, attack_type, user_input]):
         return "400 Bad Request"
 
-    if len(user_input) > 3000:
-        return "413 Payload Too Large"
-
-    # ---------- Extract Attacker ID ----------
+    # ---------- Attacker Identity ----------
     match = re.search(r"attacker_id=([a-f0-9]+)", user_input)
     attacker_id = match.group(1) if match else "unknown"
 
     stage = ATTACKER_STAGE.get(attacker_id, 0)
 
-    # ---------- Progressive Chain ----------
+    # ---------- SQLi Progression ----------
     if attack_type == "SQL Injection":
         if stage == 0:
             ATTACKER_STAGE[attacker_id] = 1
-            response_body = FAKE_SQL_USERS
+            log_event(attacker_id, "SQL Injection: dumped users table")
+            body = FAKE_SQL_USERS
 
         elif stage == 1:
             ATTACKER_STAGE[attacker_id] = 2
-            response_body = f"""
+            log_event(attacker_id, "SQL Injection: leaked admin session")
+            body = f"""
 Active sessions:
 +----------------------+
 | session_id           |
@@ -94,28 +109,50 @@ Active sessions:
 """
 
         else:
-            response_body = "MySQL server has gone away"
+            body = "MySQL server has gone away"
 
+    # ---------- Admin Access ----------
     elif endpoint == "/admin" and FAKE_ADMIN_SESSION in user_input:
         ATTACKER_STAGE[attacker_id] = 3
-        response_body = """
+        log_event(attacker_id, "Admin access gained")
+        body = """
 Admin Dashboard
-
-- Users: 3
-- Audit Logs: enabled
-- Backups: 2
-- Debug Mode: ON
+- Users
+- Audit Logs
+- Backups
+- System Settings
 """
 
+    # ---------- Fake Admin Actions ----------
+    elif ATTACKER_STAGE.get(attacker_id) == 3:
+        if "delete_user" in user_input:
+            log_event(attacker_id, "Admin action: delete user test")
+            body = "User 'test' deleted successfully"
+
+        elif "view_logs" in user_input:
+            log_event(attacker_id, "Admin action: viewed audit logs")
+            body = FAKE_AUDIT_LOGS
+
+        elif "download_backup" in user_input:
+            log_event(attacker_id, "Admin action: downloaded backup.sql")
+            body = "backup.sql downloaded (2.3MB)"
+
+        elif "timeline" in user_input:
+            body = "\n".join(ATTACKER_TIMELINE.get(attacker_id, []))
+
+        else:
+            body = "200 OK"
+
+    # ---------- Default ----------
     else:
-        response_body = "200 OK"
+        body = "200 OK"
 
     # ---------- Prompt ----------
     prompt = f"""
 {BASE_RULES}
 
 Response:
-{response_body}
+{body}
 
 Server:
 - OS: {fake_state['server']['os']}
@@ -123,7 +160,7 @@ Server:
 """
 
     try:
-        res = requests.post(
+        r = requests.post(
             OLLAMA_URL,
             json={
                 "model": MODEL_NAME,
@@ -136,9 +173,8 @@ Server:
             },
             timeout=15
         )
-
-        res.raise_for_status()
-        return res.json().get("response", "").strip()
+        r.raise_for_status()
+        return r.json().get("response", "").strip()
 
     except Exception:
         return (
