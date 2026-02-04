@@ -1,144 +1,53 @@
-from dotenv import load_dotenv
-load_dotenv()
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse
+import uuid
 
-from fastapi import FastAPI, Request, Response
-from uuid import uuid4
-
-from analyzer import analyze_request
 from llm_engine import generate_response
-from logger import log_attack
 
-app = FastAPI(title="AI Web Honeypot")
+app = FastAPI()
 
-
-def get_attacker_id(request: Request, response: Response):
+def get_attacker_id(request: Request):
     attacker_id = request.cookies.get("attacker_id")
-
     if not attacker_id:
-        attacker_id = str(uuid4())
-        response.set_cookie(
-            key="attacker_id",
-            value=attacker_id,
-            httponly=True
-        )
-
+        attacker_id = uuid.uuid4().hex
     return attacker_id
 
-
-@app.get("/")
-def home():
-    return {"status": "running", "service": "corp web portal"}
-
-
+# -------------------------------
+# SEARCH (SQLi)
+# -------------------------------
 @app.get("/search")
-async def search(q: str, request: Request, response: Response):
-    attacker_id = get_attacker_id(request, response)
+async def search(request: Request, q: str = ""):
+    attacker_id = get_attacker_id(request)
+    user_input = f"{q}&attacker_id={attacker_id}"
 
-    attack_type = analyze_request(q)
-    user_input = f"[attacker_id={attacker_id}] query={q}"
-
-    try:
-        llm_response = generate_response(
-            "/search",
-            attack_type,
-            user_input
-        )
-    except Exception:
-        llm_response = "[LLM temporarily unavailable]"
-
-    log_attack(
-        attacker_id,
-        request.client.host,
-        "/search",
-        attack_type,
-        q,
-        llm_response
+    result = generate_response(
+        endpoint="/search",
+        attack_type="SQL Injection",
+        user_input=user_input
     )
 
-    return {"result": llm_response}
+    if result.lstrip().startswith("<!DOCTYPE html"):
+        response = HTMLResponse(content=result)
+    else:
+        response = PlainTextResponse(content=result)
 
+    response.set_cookie("attacker_id", attacker_id, httponly=True)
+    return response
 
+# -------------------------------
+# ADMIN
+# -------------------------------
 @app.get("/admin")
-async def fake_admin(request: Request, response: Response):
-    attacker_id = get_attacker_id(request, response)
+async def admin(request: Request):
+    attacker_id = get_attacker_id(request)
+    user_input = f"{request.query_params}&attacker_id={attacker_id}"
 
-    raw_params = dict(request.query_params)
-    raw_action = "&".join([f"{k}={v}" for k, v in raw_params.items()])
-
-    attack_type = "Admin Access Attempt"
-
-    user_input = (
-        f"[attacker_id={attacker_id}] "
-        f"admin_params={raw_action if raw_action else 'none'}"
+    result = generate_response(
+        endpoint="/admin",
+        attack_type="Recon",
+        user_input=user_input
     )
 
-    try:
-        llm_response = generate_response("/admin", attack_type, user_input)
-    except Exception:
-        llm_response = "[LLM temporarily unavailable]"
-
-    log_attack(
-        attacker_id,
-        request.client.host,
-        "/admin",
-        attack_type,
-        raw_action,
-        llm_response
-    )
-
-    return {
-        "status": "ok",
-        "admin_action": raw_action,
-        "message": llm_response
-    }
-
-
-@app.get("/shell")
-async def shell(cmd: str, request: Request, response: Response):
-    attacker_id = get_attacker_id(request, response)
-
-    attack_type = analyze_request(cmd)
-    user_input = f"[attacker_id={attacker_id}] shell_cmd={cmd}"
-
-    try:
-        llm_response = generate_response("/shell", attack_type, user_input)
-    except Exception:
-        llm_response = "[LLM temporarily unavailable]"
-
-    log_attack(
-        attacker_id,
-        request.client.host,
-        "/shell",
-        attack_type,
-        cmd,
-        llm_response
-    )
-
-    return {"output": llm_response}
-
-
-@app.get("/download")
-async def fake_download(file: str, request: Request, response: Response):
-    attacker_id = get_attacker_id(request, response)
-
-    attack_type = "File Access Attempt"
-    user_input = f"[attacker_id={attacker_id}] tried to access file={file}"
-
-    try:
-        llm_response = generate_response("/download", attack_type, user_input)
-    except Exception:
-        llm_response = "[LLM temporarily unavailable]"
-
-    log_attack(
-        attacker_id,
-        request.client.host,
-        "/download",
-        attack_type,
-        file,
-        llm_response
-    )
-
-    return {
-        "requested_file": file,
-        "content": llm_response
-    }
+    response = PlainTextResponse(content=result)
+    response.set_cookie("attacker_id", attacker_id, httponly=True)
+    return response
