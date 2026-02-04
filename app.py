@@ -37,11 +37,14 @@ async def search(q: str, request: Request, response: Response):
     attack_type = analyze_request(q)
     user_input = f"[attacker_id={attacker_id}] query={q}"
 
-    llm_response = generate_response(
-        "/search",
-        attack_type,
-        user_input
-    )
+    try:
+        llm_response = generate_response(
+            "/search",
+            attack_type,
+            user_input
+        )
+    except Exception:
+        llm_response = "[LLM temporarily unavailable]"
 
     log_attack(
         attacker_id,
@@ -59,10 +62,7 @@ async def search(q: str, request: Request, response: Response):
 async def fake_admin(request: Request, response: Response):
     attacker_id = get_attacker_id(request, response)
 
-  
     raw_params = dict(request.query_params)
-
-   
     raw_action = "&".join([f"{k}={v}" for k, v in raw_params.items()])
 
     attack_type = "Admin Access Attempt"
@@ -72,7 +72,10 @@ async def fake_admin(request: Request, response: Response):
         f"admin_params={raw_action if raw_action else 'none'}"
     )
 
-    llm_response = generate_response("/admin", attack_type, user_input)
+    try:
+        llm_response = generate_response("/admin", attack_type, user_input)
+    except Exception:
+        llm_response = "[LLM temporarily unavailable]"
 
     log_attack(
         attacker_id,
@@ -97,7 +100,10 @@ async def shell(cmd: str, request: Request, response: Response):
     attack_type = analyze_request(cmd)
     user_input = f"[attacker_id={attacker_id}] shell_cmd={cmd}"
 
-    llm_response = generate_response("/shell", attack_type, user_input)
+    try:
+        llm_response = generate_response("/shell", attack_type, user_input)
+    except Exception:
+        llm_response = "[LLM temporarily unavailable]"
 
     log_attack(
         attacker_id,
@@ -118,7 +124,10 @@ async def fake_download(file: str, request: Request, response: Response):
     attack_type = "File Access Attempt"
     user_input = f"[attacker_id={attacker_id}] tried to access file={file}"
 
-    llm_response = generate_response("/download", attack_type, user_input)
+    try:
+        llm_response = generate_response("/download", attack_type, user_input)
+    except Exception:
+        llm_response = "[LLM temporarily unavailable]"
 
     log_attack(
         attacker_id,
