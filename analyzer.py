@@ -11,7 +11,7 @@ def analyze_request(payload: str):
         or "or 1=1" in payload
         or "drop table" in payload
     ):
-        return "SQL_INJECTION"
+        return "SQL Injection"
 
     # XSS
     if "<script>" in payload or "javascript:" in payload:
