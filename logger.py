@@ -1,6 +1,6 @@
 from datetime import datetime
 
-MAX_LEN = 300  # prevent log abuse
+MAX_LEN = 300
 
 def _clean(value):
     if value is None:
@@ -26,4 +26,5 @@ def log_attack(attacker_id, ip, endpoint, attack_type, payload, llm_response):
 
     with open("attacks.log", "a", encoding="utf-8") as f:
         f.write(log_line)
+
 
