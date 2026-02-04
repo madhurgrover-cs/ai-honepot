@@ -1,17 +1,28 @@
 def analyze_request(payload: str):
+    if not payload:
+        return "NORMAL"
+
     payload = payload.lower()
 
-    if "union select" in payload or "' or 1=1" in payload:
+    # SQL Injection
+    if (
+        "union select" in payload
+        or "' or 1=1" in payload
+        or "or 1=1" in payload
+        or "drop table" in payload
+    ):
         return "SQL_INJECTION"
 
-    if "<script>" in payload:
+    # XSS
+    if "<script>" in payload or "javascript:" in payload:
         return "XSS"
 
-    if "../" in payload:
+    # Path Traversal
+    if "../" in payload or "..\\" in payload:
         return "PATH_TRAVERSAL"
 
-    if "cmd=" in payload or ";ls" in payload:
+    # Command Injection
+    if "cmd=" in payload or ";ls" in payload or ";cat" in payload:
         return "CMD_INJECTION"
 
     return "NORMAL"
-
