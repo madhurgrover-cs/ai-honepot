@@ -6,12 +6,14 @@ def analyze_request(payload: str):
 
     # SQL Injection
     if (
-        "union select" in payload
-        or "' or 1=1" in payload
-        or "or 1=1" in payload
-        or "drop table" in payload
-    ):
-        return "SQL Injection"
+    "union select" in payload
+    or " or 1=1" in payload
+    or "' or 1=1" in payload
+    or "\" or 1=1" in payload
+    or "drop table" in payload
+):
+    return "SQL Injection"
+
 
     # XSS
     if "<script>" in payload or "javascript:" in payload:
