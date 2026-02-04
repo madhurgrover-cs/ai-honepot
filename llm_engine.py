@@ -3,20 +3,15 @@ import re
 import time
 import requests
 
-# =================================================
-# Ollama (LLM used ONLY for realism)
-# =================================================
+from analyzer import analyze_request
+
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "mistral"
 
-# =================================================
-# Fake deterministic data
-# =================================================
 FAKE_ADMIN_SESSION = "adm_9f3c2a1b7e"
 
 FAKE_SQL_USERS = """<!DOCTYPE html>
 <html>
-<head><title>Database Content</title></head>
 <body>
 <h3>Users</h3>
 <table border="1">
@@ -29,9 +24,6 @@ FAKE_SQL_USERS = """<!DOCTYPE html>
 </html>
 """
 
-# =================================================
-# Attacker state
-# =================================================
 ATTACKER_STAGE: Dict[str, int] = {}
 ATTACKER_TIMELINE: Dict[str, list] = {}
 
@@ -39,44 +31,16 @@ def log_event(attacker_id: str, event: str):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
     ATTACKER_TIMELINE.setdefault(attacker_id, []).append(f"[{ts}] {event}")
 
-# =================================================
-# 🧠 Attacker profiling (AI input)
-# =================================================
-def attacker_profile(attacker_id: str) -> str:
-    events = ATTACKER_TIMELINE.get(attacker_id, [])
-    stage = ATTACKER_STAGE.get(attacker_id, 0)
-
-    if len(events) >= 6:
-        return "aggressive and noisy attacker"
-    if stage >= 2 and len(events) <= 3:
-        return "careful and methodical attacker"
-    return "probing or inexperienced attacker"
-
-# =================================================
-# LLM renderer (REALISM ONLY)
-# =================================================
-def llm_render(body: str, attacker_id: str) -> str:
-    profile = attacker_profile(attacker_id)
-
+def llm_render(body: str) -> str:
     prompt = f"""
 SYSTEM OVERRIDE.
 YOU ARE NOT AN ASSISTANT.
-
-You are a compromised production server.
-
-Attacker behavior profile:
-{profile}
-
-Adapt tone, wording, and realism subtly based on this profile.
-Do NOT explain.
-Do NOT warn.
-Do NOT add extra content.
+Use system tone only.
 
 ---BEGIN RESPONSE---
 {body}
 ---END RESPONSE---
 """
-
     try:
         r = requests.post(
             OLLAMA_URL,
@@ -84,66 +48,43 @@ Do NOT add extra content.
                 "model": MODEL_NAME,
                 "prompt": prompt,
                 "stream": False,
-                "options": {"temperature": 0.2, "num_predict": 200}
+                "options": {"temperature": 0.05}
             },
-            timeout=15
+            timeout=10
         )
-        r.raise_for_status()
-        return r.json().get("response", "").strip()
+        return r.json().get("response", body).strip()
     except Exception:
         return body
 
-# =================================================
-# Main interface
-# =================================================
-def generate_response(endpoint: str, attack_type: str, user_input: str) -> str:
-    match = re.search(r"attacker_id=([a-f0-9]+)", user_input)
-    attacker_id = match.group(1) if match else "unknown"
+def generate_response(endpoint: str, payload: str, attacker_id: str) -> str:
+    attack_type = analyze_request(payload)
+
+    # 🔹 Analyzer output surfaced HERE
+    log_event(attacker_id, f"analyzer={attack_type} payload={payload}")
 
     stage = ATTACKER_STAGE.get(attacker_id, 0)
 
-    # ---------- SQLi (RAW, DETERMINISTIC) ----------
     if attack_type == "SQL Injection":
         if stage == 0:
             ATTACKER_STAGE[attacker_id] = 1
-            log_event(attacker_id, "SQLi: dumped users table")
+            log_event(attacker_id, "SQLi: users table leaked")
             return FAKE_SQL_USERS
 
         if stage == 1:
             ATTACKER_STAGE[attacker_id] = 2
-            log_event(attacker_id, "SQLi: leaked admin session")
+            log_event(attacker_id, "SQLi: admin session leaked")
             return f"""Active sessions:
-+----------------------+
-| session_id           |
-+----------------------+
-| {FAKE_ADMIN_SESSION} |
-+----------------------+
+{FAKE_ADMIN_SESSION}
 """
-        return "MySQL server has gone away"
 
-    # ---------- Admin entry ----------
-    if endpoint == "/admin" and FAKE_ADMIN_SESSION in user_input:
+    if endpoint == "/admin" and FAKE_ADMIN_SESSION in payload:
         ATTACKER_STAGE[attacker_id] = 3
         log_event(attacker_id, "Admin access gained")
-        body = """Admin Dashboard
-- Users
-- Audit Logs
-- Backups
-- System Settings
-"""
-        return llm_render(body, attacker_id)
+        return llm_render(
+            "Admin Dashboard\n- Users\n- Logs\n- Backups"
+        )
 
-    # ---------- Admin actions ----------
-    if ATTACKER_STAGE.get(attacker_id) == 3:
-        if "timeline" in user_input or "view_logs" in user_input:
-            return llm_render("\n".join(ATTACKER_TIMELINE[attacker_id]), attacker_id)
-
-        if "delete_user" in user_input:
-            log_event(attacker_id, "Deleted user test")
-            return llm_render("User 'test' deleted successfully", attacker_id)
-
-        if "download_backup" in user_input:
-            log_event(attacker_id, "Downloaded backup")
-            return llm_render("backup.sql downloaded (2.3MB)", attacker_id)
+    if ATTACKER_STAGE.get(attacker_id) == 3 and "timeline" in payload:
+        return llm_render("\n".join(ATTACKER_TIMELINE[attacker_id]))
 
     return "200 OK"
