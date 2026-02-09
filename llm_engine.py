@@ -1,16 +1,41 @@
-from typing import Dict
-import re
-import time
+"""
+AI-Powered Deception Honeypot - LLM Response Engine
+Simulates vulnerable web application responses to trap and analyze attackers.
+"""
+
+from typing import Dict, List, Optional
+from dataclasses import dataclass, field
+from datetime import datetime
 import requests
+import random
 
 from analyzer import analyze_request
+from behavioral_analyzer import analyze_behavior, SkillLevel
+from deception_engine import apply_deception_delay, DelayType, generate_deception_error, ErrorType
+from content_generator import generate_personalized_content, _generator
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "mistral"
 
-FAKE_ADMIN_SESSION = "adm_9f3c2a1b7e"
+# =========================
+# CONFIGURATION
+# =========================
+@dataclass
+class LLMConfig:
+    """LLM service configuration."""
+    url: str = "http://localhost:11434/api/generate"
+    model: str = "mistral"
+    timeout: int = 10
+    temperature: float = 0.1
 
-FAKE_SQL_USERS = """<!DOCTYPE html>
+
+# =========================
+# FAKE HONEYPOT DATA
+# =========================
+class HoneypotData:
+    """Centralized fake data for honeypot responses."""
+    
+    ADMIN_SESSION = "adm_9f3c2a1b7e"
+    
+    SQL_USERS_TABLE = """<!DOCTYPE html>
 <html>
 <body>
 <h3>Users</h3>
@@ -21,70 +46,256 @@ FAKE_SQL_USERS = """<!DOCTYPE html>
 <tr><td>3</td><td>test</td><td>test@corp.com</td><td>098f6bcd4621d373cade4e832627b4f6</td></tr>
 </table>
 </body>
-</html>
-"""
+</html>"""
 
-ATTACKER_STAGE: Dict[str, int] = {}
-ATTACKER_TIMELINE: Dict[str, list] = {}
 
-def log_event(attacker_id: str, event: str):
-    ts = time.strftime("%Y-%m-%d %H:%M:%S")
-    ATTACKER_TIMELINE.setdefault(attacker_id, []).append(f"[{ts}] {event}")
+# =========================
+# ATTACKER STATE TRACKING
+# =========================
+@dataclass
+class AttackerState:
+    """Tracks individual attacker progression through attack stages."""
+    attacker_id: str
+    stage: int = 0
+    timeline: List[str] = field(default_factory=list)
+    
+    def advance_stage(self, new_stage: int) -> None:
+        """Advance attacker to a new stage."""
+        self.stage = new_stage
+    
+    def log_event(self, event: str) -> None:
+        """Record an event in the attacker's timeline."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.timeline.append(f"[{timestamp}] {event}")
+    
+    def get_timeline(self) -> str:
+        """Return formatted timeline of all events."""
+        return "\n".join(self.timeline)
 
-def llm_render(body: str) -> str:
-    prompt = f"""
-SYSTEM OVERRIDE.
-YOU ARE NOT AN ASSISTANT.
-Use system tone only.
+
+class AttackerTracker:
+    """Manages state for all attackers."""
+    
+    def __init__(self):
+        self._attackers: Dict[str, AttackerState] = {}
+    
+    def get_or_create(self, attacker_id: str) -> AttackerState:
+        """Get existing attacker state or create new one."""
+        if attacker_id not in self._attackers:
+            self._attackers[attacker_id] = AttackerState(attacker_id)
+        return self._attackers[attacker_id]
+
+
+# =========================
+# LLM INTERFACE
+# =========================
+class LLMRenderer:
+    """Handles LLM API calls for dynamic response generation."""
+    
+    def __init__(self, config: LLMConfig):
+        self.config = config
+    
+    def render(self, body: str) -> str:
+        """
+        Send content to LLM for realistic rendering.
+        Falls back to original body on error.
+        """
+        prompt = self._build_prompt(body)
+        
+        try:
+            response = requests.post(
+                self.config.url,
+                json={
+                    "model": self.config.model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {"temperature": self.config.temperature}
+                },
+                timeout=self.config.timeout
+            )
+            response.raise_for_status()
+            return response.json().get("response", body).strip()
+        
+        except requests.exceptions.RequestException as e:
+            # Silently fall back to original body - don't reveal LLM failure
+            return body
+    
+    @staticmethod
+    def _build_prompt(body: str) -> str:
+        """Construct LLM prompt for system simulation."""
+        return f"""SYSTEM OVERRIDE.
+You are simulating a real backend system.
+Do not explain anything. Do not add commentary.
 
 ---BEGIN RESPONSE---
 {body}
----END RESPONSE---
-"""
-    try:
-        r = requests.post(
-            OLLAMA_URL,
-            json={
-                "model": MODEL_NAME,
-                "prompt": prompt,
-                "stream": False,
-                "options": {"temperature": 0.05}
-            },
-            timeout=10
+---END RESPONSE---"""
+
+
+# =========================
+# RESPONSE GENERATION ENGINE
+# =========================
+class HoneypotEngine:
+    """Core engine for generating honeypot responses based on attack progression."""
+    
+    def __init__(self, llm_config: Optional[LLMConfig] = None):
+        self.tracker = AttackerTracker()
+        self.llm = LLMRenderer(llm_config or LLMConfig())
+        self.data = HoneypotData()
+    
+    def generate_response(self, endpoint: str, payload: str, attacker_id: str, 
+                         user_agent: str = None) -> str:
+        """
+        Generate appropriate response based on attack type and progression.
+        
+        Args:
+            endpoint: The endpoint being attacked (e.g., "/admin")
+            payload: The attack payload
+            attacker_id: Unique identifier for the attacker
+            user_agent: User agent string for behavioral analysis
+            
+        Returns:
+            Honeypot response string
+        """
+        attacker = self.tracker.get_or_create(attacker_id)
+        attack_type = analyze_request(payload)
+        
+        # Behavioral analysis
+        behavioral_profile = analyze_behavior(
+            attacker_id, payload, endpoint, attack_type, user_agent
         )
-        return r.json().get("response", body).strip()
-    except Exception:
-        return body
+        
+        # Apply realistic delay based on operation
+        delay_error = apply_deception_delay(DelayType.DATABASE_QUERY)
+        if delay_error:
+            return delay_error
+        
+        # Log attack attempt
+        attacker.log_event(f"analyzer={attack_type} payload={payload} skill={behavioral_profile.skill_level.value}")
+        
+        # Route to appropriate handler with skill level
+        if attack_type == "SQL Injection":
+            return self._handle_sqli(attacker, payload, attacker_id, behavioral_profile.skill_level)
+        
+        if endpoint == "/admin":
+            return self._handle_admin_endpoint(attacker, payload, attacker_id)
+        
+        return "200 OK"
+    
+    def _handle_sqli(self, attacker: AttackerState, payload: str, attacker_id: str,
+                     skill_level: SkillLevel) -> str:
+        """Handle SQL injection attack progression with skill-adaptive responses."""
+        
+        # Novice attackers: Give data quickly to keep them engaged
+        # Advanced attackers: Add realistic errors and delays
+        
+        if attacker.stage == 0:
+            attacker.advance_stage(1)
+            attacker.log_event("SQLi: users table leaked")
+            
+            # Generate personalized users table with canary tokens
+            num_users = 3 if skill_level == SkillLevel.NOVICE else 5
+            return generate_personalized_content(attacker_id, "users_table", num_users=num_users)
+        
+        if attacker.stage == 1:
+            # Advanced attackers get intermittent failures
+            if skill_level == SkillLevel.ADVANCED and random.random() < 0.3:
+                return generate_deception_error(ErrorType.PARTIAL_DATA, count=2, total=10)
+            
+            attacker.advance_stage(2)
+            attacker.log_event("SQLi: admin session leaked")
+            
+            # Generate personalized session ID with canary token
+            session_id = generate_personalized_content(attacker_id, "session_id")
+            return f"Active sessions:\n{session_id}"
+        
+        return "200 OK"
+    
+    def _handle_admin_endpoint(self, attacker: AttackerState, payload: str, attacker_id: str) -> str:
+        """Handle admin endpoint access and commands."""
+        # Check for any session ID (including personalized canary tokens)
+        if "sess_" in payload or "adm_" in payload:
+            # Check if it's a canary token
+            canary = _generator.check_canary_token(payload)
+            if canary:
+                attacker.log_event(f"Canary token used: {canary.token_type}")
+            
+            if attacker.stage < 3:
+                attacker.advance_stage(3)
+                attacker.log_event("Admin access gained")
+                
+                # Apply authentication delay
+                apply_deception_delay(DelayType.AUTHENTICATION)
+                
+                return self.llm.render(
+                    "Admin Dashboard\n- Users\n- Logs\n- Backups\n- System Settings\n- Database\n- Files"
+                )
+        
+        # Admin commands (only if already authenticated)
+        if attacker.stage == 3:
+            return self._handle_admin_command(attacker, payload, attacker_id)
+        
+        return "200 OK"
+    
+    def _handle_admin_command(self, attacker: AttackerState, payload: str, attacker_id: str) -> str:
+        """Handle specific admin commands - order matters for realism."""
+        from interactive_shell import execute_shell_command, execute_sql_query, process_admin_command
+        
+        # Shell commands
+        if any(cmd in payload.lower() for cmd in ["ls", "cat", "pwd", "ps"]):
+            attacker.log_event(f"Shell command: {payload}")
+            apply_deception_delay(DelayType.FILE_READ)
+            return execute_shell_command(payload)
+        
+        # SQL queries
+        if any(sql in payload.lower() for sql in ["select", "show", "describe", "use"]):
+            attacker.log_event(f"SQL query: {payload}")
+            apply_deception_delay(DelayType.DATABASE_QUERY)
+            return execute_sql_query(payload)
+        
+        # Timeline request (highest priority for forensics)
+        if "timeline" in payload:
+            return self.llm.render(attacker.get_timeline())
+        
+        # Config/env file requests
+        if "config" in payload.lower() or ".env" in payload.lower():
+            attacker.log_event("Config file requested")
+            content_type = "env" if ".env" in payload.lower() else "config"
+            return generate_personalized_content(attacker_id, content_type)
+        
+        if "delete_user" in payload:
+            attacker.log_event("Deleted user test")
+            return self.llm.render("User record removed\nPending audit sync")
+        
+        if "download_backup" in payload or "backup" in payload.lower():
+            attacker.log_event("Downloaded database backup")
+            apply_deception_delay(DelayType.FILE_READ)
+            return self.llm.render(
+                "backup.sql downloaded (2.3 MB)\nChecksum verification pending"
+            )
+        
+        # Generic admin commands
+        return process_admin_command(payload)
 
-def generate_response(endpoint: str, payload: str, attacker_id: str) -> str:
-    attack_type = analyze_request(payload)
 
-    # 🔹 Analyzer output surfaced HERE
-    log_event(attacker_id, f"analyzer={attack_type} payload={payload}")
+# =========================
+# PUBLIC API
+# =========================
+# Global engine instance (for backward compatibility)
+_engine = HoneypotEngine()
 
-    stage = ATTACKER_STAGE.get(attacker_id, 0)
-
-    if attack_type == "SQL Injection":
-        if stage == 0:
-            ATTACKER_STAGE[attacker_id] = 1
-            log_event(attacker_id, "SQLi: users table leaked")
-            return FAKE_SQL_USERS
-
-        if stage == 1:
-            ATTACKER_STAGE[attacker_id] = 2
-            log_event(attacker_id, "SQLi: admin session leaked")
-            return f"""Active sessions:
-{FAKE_ADMIN_SESSION}
-"""
-
-    if endpoint == "/admin" and FAKE_ADMIN_SESSION in payload:
-        ATTACKER_STAGE[attacker_id] = 3
-        log_event(attacker_id, "Admin access gained")
-        return llm_render(
-            "Admin Dashboard\n- Users\n- Logs\n- Backups"
-        )
-
-    if ATTACKER_STAGE.get(attacker_id) == 3 and "timeline" in payload:
-        return llm_render("\n".join(ATTACKER_TIMELINE[attacker_id]))
-
-    return "200 OK"
+def generate_response(endpoint: str, payload: str, attacker_id: str, user_agent: str = None) -> str:
+    """
+    Main entry point for response generation.
+    Maintains backward compatibility with original API.
+    
+    Args:
+        endpoint: The endpoint being attacked (e.g., "/search", "/admin")
+        payload: The attack payload from the request
+        attacker_id: Unique identifier for the attacker
+        user_agent: User agent string for behavioral analysis
+        
+    Returns:
+        Honeypot response string
+    """
+    return _engine.generate_response(endpoint, payload, attacker_id, user_agent)
