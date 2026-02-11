@@ -412,6 +412,26 @@ def get_demo_dashboard_html() -> str:
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        .attack-btn {
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+        }
+        
+        .attack-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .attack-btn:active {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -430,6 +450,7 @@ def get_demo_dashboard_html() -> str:
             <button class="tab-btn" onclick="switchTab('ai-intelligence')">🧠 AI Intelligence</button>
             <button class="tab-btn" onclick="switchTab('mitre-analysis')">🎯 MITRE Analysis</button>
             <button class="tab-btn" onclick="switchTab('threat-profile')">👤 Threat Profile</button>
+            <button class="tab-btn" onclick="switchTab('attack-simulator')" style="color: #e74c3c;">⚡ Attack Simulator</button>
         </div>
         
         <div class="stats-grid">
@@ -546,6 +567,62 @@ def get_demo_dashboard_html() -> str:
                         <div class="waiting-message">
                             Intelligence data will appear here...
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 5: ATTACK SIMULATOR -->
+        <div id="attack-simulator" class="tab-content">
+            <div class="panel full-width">
+                <h2>⚡ ATTACK SIMULATOR</h2>
+                <p style="color: #888; margin-bottom: 20px;">Trigger simulated attacks to test the honeypot's detection and analysis capabilities.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                    <button class="attack-btn" onclick="triggerAttack('sql')" style="background: linear-gradient(135deg, #e74c3c, #c0392b); border: 2px solid #e74c3c;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">💉</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">SQL Injection</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Database exploitation</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('xss')" style="background: linear-gradient(135deg, #e67e22, #d35400); border: 2px solid #e67e22;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📜</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">XSS Attack</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Cross-site scripting</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('path')" style="background: linear-gradient(135deg, #f39c12, #e67e22); border: 2px solid #f39c12;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📂</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Path Traversal</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">File system access</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('cmd')" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); border: 2px solid #9b59b6;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">💻</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Command Injection</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Remote code execution</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('ssrf')" style="background: linear-gradient(135deg, #3498db, #2980b9); border: 2px solid #3498db;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">☁️</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">SSRF</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Server-side request forgery</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('auth')" style="background: linear-gradient(135deg, #1abc9c, #16a085); border: 2px solid #1abc9c;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🔓</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Auth Bypass</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Authentication bypass</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('deser')" style="background: linear-gradient(135deg, #e74c3c, #c0392b); border: 2px solid #e74c3c;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📦</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Deserialization</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Object injection</div>
+                    </button>
+                </div>
+                
+                <div id="sim-status" style="margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; color: #00ff41; min-height: 50px; display: flex; align-items: center; justify-content: center;">
+                    Ready to simulate attacks...
                 </div>
             </div>
         </div>
@@ -875,6 +952,44 @@ def get_demo_dashboard_html() -> str:
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Attack simulator function
+        async function triggerAttack(attackType) {
+            const status = document.getElementById('sim-status');
+            const attackMap = {
+                'sql': { url: '/search?q=%27%20OR%201=1--', name: 'SQL Injection' },
+                'xss': { url: '/search?q=%3Cscript%3Ealert(%27XSS%27)%3C/script%3E', name: 'XSS Attack' },
+                'path': { url: '/files?path=../../../../etc/passwd', name: 'Path Traversal' },
+                'cmd': { url: '/admin?cmd=cat%20/etc/shadow', name: 'Command Injection' },
+                'ssrf': { url: '/api/fetch?url=http://169.254.169.254/latest/meta-data/', name: 'SSRF' },
+                'auth': { url: '/admin?user=admin&sess=adm_123', name: 'Auth Bypass' },
+                'deser': { url: '/api/data?obj=rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcA', name: 'Deserialization' }
+            };
+            
+            const attack = attackMap[attackType];
+            if (!attack) {
+                status.innerHTML = '❌ Unknown attack type';
+                status.style.color = '#e74c3c';
+                return;
+            }
+            
+            status.innerHTML = `⏳ Launching ${attack.name}...`;
+            status.style.color = '#f39c12';
+            
+            try {
+                const response = await fetch(attack.url);
+                status.innerHTML = `✅ ${attack.name} triggered! Check the Live Monitor tab for results.`;
+                status.style.color = '#00ff41';
+                
+                // Auto-switch to Live Monitor tab after 1 second
+                setTimeout(() => {
+                    switchTab('live-monitor');
+                }, 1000);
+            } catch (error) {
+                status.innerHTML = `❌ Error: ${error.message}`;
+                status.style.color = '#e74c3c';
+            }
         }
         
         ws.onopen = function() {
