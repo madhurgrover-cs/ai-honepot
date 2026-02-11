@@ -360,6 +360,58 @@ def get_demo_dashboard_html() -> str:
         ::-webkit-scrollbar-thumb:hover {
             background: #00d4ff;
         }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 65, 0.2);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            color: #00d4ff;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+        
+        .tab-btn.active {
+            background: rgba(0, 255, 65, 0.2);
+            border-color: #00ff41;
+            color: #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -371,6 +423,14 @@ def get_demo_dashboard_html() -> str:
                 Real-Time Attack Analysis & Intelligence Processing
             </p>
         </header>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('live-monitor')">📡 Live Monitor</button>
+            <button class="tab-btn" onclick="switchTab('ai-intelligence')">🧠 AI Intelligence</button>
+            <button class="tab-btn" onclick="switchTab('mitre-analysis')">🎯 MITRE Analysis</button>
+            <button class="tab-btn" onclick="switchTab('threat-profile')">👤 Threat Profile</button>
+        </div>
         
         <div class="stats-grid">
             <div class="stat-card">
@@ -391,63 +451,100 @@ def get_demo_dashboard_html() -> str:
             </div>
         </div>
         
-        <div class="main-grid">
-            <!-- Current Attack -->
-            <div class="panel full-width">
-                <h2>🎯 INCOMING ATTACK</h2>
-                <div id="current-attack">
-                    <div class="waiting-message">
-                        Waiting for attack...
+        <!-- TAB 1: Live Monitor -->
+        <div id="live-monitor" class="tab-content active">
+            <div class="main-grid">
+                <!-- Current Attack -->
+                <div class="panel full-width">
+                    <h2>🎯 INCOMING ATTACK</h2>
+                    <div id="current-attack">
+                        <div class="waiting-message">
+                            Waiting for attack...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attack Timeline -->
+                <div class="panel full-width">
+                    <h2>📊 ATTACK TIMELINE</h2>
+                    <div class="timeline" id="attack-timeline">
+                        <div class="waiting-message">
+                            Attack history will appear here...
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- LLM Thinking Process -->
-            <div class="panel">
-                <h2>🧠 LLM REASONING PROCESS</h2>
-                <div id="llm-thinking">
-                    <div class="waiting-message">
-                        LLM analysis will appear here...
+        </div>
+        
+        <!-- TAB 2: AI Intelligence -->
+        <div id="ai-intelligence" class="tab-content">
+            <div class="main-grid">
+                <!-- LLM Thinking Process -->
+                <div class="panel full-width">
+                    <h2>🧠 LLM REASONING PROCESS</h2>
+                    <div id="llm-thinking">
+                        <div class="waiting-message">
+                            LLM analysis will appear here...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Prediction Engine -->
+                <div class="panel full-width">
+                    <h2>🔮 NEXT ATTACK PREDICTION</h2>
+                    <div id="prediction-display">
+                        <div class="waiting-message">
+                            Prediction data will appear after first attack...
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Intelligence Analysis -->
-            <div class="panel">
-                <h2>🔍 INTELLIGENCE ANALYSIS</h2>
-                <div id="intelligence-analysis">
-                    <div class="waiting-message">
-                        Intelligence data will appear here...
+        </div>
+        
+        <!-- TAB 3: MITRE Analysis -->
+        <div id="mitre-analysis" class="tab-content">
+            <div class="main-grid">
+                <!-- MITRE ATT&CK Mapping -->
+                <div class="panel full-width">
+                    <h2>🎯 MITRE ATT&CK TECHNIQUES</h2>
+                    <div id="mitre-display">
+                        <div class="waiting-message">
+                            MITRE mapping will appear after first attack...
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Behavioral Profile -->
-            <div class="panel">
-                <h2>👤 ATTACKER PROFILE</h2>
-                <div id="behavioral-profile">
-                    <div class="waiting-message">
-                        Behavioral analysis will appear here...
+        </div>
+        
+        <!-- TAB 4: Threat Profile -->
+        <div id="threat-profile" class="tab-content">
+            <div class="main-grid">
+                <!-- Behavioral Profile -->
+                <div class="panel">
+                    <h2>👤 ATTACKER PROFILE</h2>
+                    <div id="behavioral-profile">
+                        <div class="waiting-message">
+                            Behavioral analysis will appear here...
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Threat Intelligence -->
-            <div class="panel">
-                <h2>⚠️ THREAT INTELLIGENCE</h2>
-                <div id="threat-intel">
-                    <div class="waiting-message">
-                        Threat data will appear here...
+                
+                <!-- Threat Intelligence -->
+                <div class="panel">
+                    <h2>⚠️ THREAT INTELLIGENCE</h2>
+                    <div id="threat-intel">
+                        <div class="waiting-message">
+                            Threat data will appear here...
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Attack Timeline -->
-            <div class="panel full-width">
-                <h2>📊 ATTACK TIMELINE</h2>
-                <div class="timeline" id="attack-timeline">
-                    <div class="waiting-message">
-                        Attack history will appear here...
+                
+                <!-- Intelligence Analysis -->
+                <div class="panel full-width">
+                    <h2>🔍 INTELLIGENCE ANALYSIS</h2>
+                    <div id="intelligence-analysis">
+                        <div class="waiting-message">
+                            Intelligence data will appear here...
                     </div>
                 </div>
             </div>
@@ -455,6 +552,28 @@ def get_demo_dashboard_html() -> str:
     </div>
     
     <script>
+        // Tab switching function
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(tabId);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Activate corresponding button
+            event.target.classList.add('active');
+        }
+        
         const ws = new WebSocket('ws://localhost:8000/ws/demo');
         let attackCount = 0;
         let attackHistory = [];
