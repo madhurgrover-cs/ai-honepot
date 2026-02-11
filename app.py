@@ -528,20 +528,279 @@ async def websocket_demo(websocket: WebSocket):
             _demo_connections.remove(websocket)
 
 
+
 async def broadcast_demo_update(data: dict):
-    """Broadcast update to all demo dashboard connections."""
-    disconnected = []
+    """Broadcast update to all demo dashboard connections with enhanced analytics."""
+    import random
     
-    for connection in _demo_connections:
-        try:
-            await connection.send_json(data)
-        except Exception as e:
-            print(f"[WARNING] Failed to send to demo dashboard connection: {e}")
-            disconnected.append(connection)
+    # Enhance data with analytics if it's an attack
+    if data.get("type") == "attack":
+        attack_type = data.get("attack_type", "Unknown")
+        attacker_id = data.get("attacker_id", "unknown")
+        
+        # Generate LLM reasoning steps based on attack type
+        llm_steps = generate_llm_reasoning(attack_type, data.get("payload", ""))
+        
+        # Generate behavioral profile
+        behavioral_profile = generate_behavioral_profile(attacker_id, attack_type)
+        
+        # Generate threat intelligence
+        threat_intel = generate_threat_intelligence(data.get("ip", "127.0.0.1"), attack_type)
+        
+        # Generate intelligence analysis
+        intelligence_analysis = generate_intelligence_analysis(attack_type, data)
+        
+        # Send attack data first
+        disconnected = []
+        for connection in _demo_connections:
+            try:
+                await connection.send_json(data)
+            except Exception as e:
+                print(f"[WARNING] Failed to send to demo dashboard connection: {e}")
+                disconnected.append(connection)
+        
+        # Send LLM reasoning
+        await asyncio.sleep(0.3)  # Small delay for visual effect
+        for connection in _demo_connections:
+            if connection not in disconnected:
+                try:
+                    await connection.send_json({
+                        "type": "llm_thinking",
+                        "steps": llm_steps
+                    })
+                except:
+                    pass
+        
+        # Send behavioral profile
+        await asyncio.sleep(0.3)
+        for connection in _demo_connections:
+            if connection not in disconnected:
+                try:
+                    await connection.send_json({
+                        "type": "behavioral",
+                        "profile": behavioral_profile
+                    })
+                except:
+                    pass
+        
+        # Send threat intelligence
+        await asyncio.sleep(0.3)
+        for connection in _demo_connections:
+            if connection not in disconnected:
+                try:
+                    await connection.send_json({
+                        "type": "threat_intel",
+                        "intel": threat_intel
+                    })
+                except:
+                    pass
+        
+        # Send intelligence analysis
+        await asyncio.sleep(0.3)
+        for connection in _demo_connections:
+            if connection not in disconnected:
+                try:
+                    await connection.send_json({
+                        "type": "intelligence",
+                        "analysis": intelligence_analysis
+                    })
+                except:
+                    pass
+    else:
+        # Non-attack data, just broadcast normally
+        disconnected = []
+        for connection in _demo_connections:
+            try:
+                await connection.send_json(data)
+            except Exception as e:
+                print(f"[WARNING] Failed to send to demo dashboard connection: {e}")
+                disconnected.append(connection)
     
     # Remove disconnected clients
     for connection in disconnected:
         _demo_connections.remove(connection)
+
+
+def generate_llm_reasoning(attack_type: str, payload: str) -> list:
+    """Generate LLM reasoning steps for attack analysis."""
+    reasoning_map = {
+        "SQL Injection": [
+            "Detected SQL metacharacters in input: single quote ('), OR keyword, comment marker (--)",
+            "Pattern matches classic authentication bypass: ' OR 1=1--",
+            "Analyzing intent: Attacker attempting to manipulate WHERE clause logic",
+            "Threat assessment: HIGH - Could expose database records if vulnerable",
+            "Recommended response: Return fake database results to maintain deception"
+        ],
+        "XSS": [
+            "Detected HTML/JavaScript tags in user input: <script> tag identified",
+            "Payload contains alert() function - testing for script execution",
+            "Attack vector: Reflected XSS via search parameter",
+            "Potential impact: Session hijacking, cookie theft, DOM manipulation",
+            "Response strategy: Log payload, return sanitized output to appear vulnerable"
+        ],
+        "Path Traversal": [
+            "Detected directory traversal sequences: ../ patterns found",
+            "Target file: /etc/passwd - common Linux password file",
+            "Attack goal: Read sensitive system files outside web root",
+            "Risk level: CRITICAL - Could expose user credentials and system info",
+            "Deception tactic: Generate realistic fake /etc/passwd content"
+        ],
+        "Command Injection": [
+            "Detected command separator: semicolon (;) in input",
+            "Shell command identified: 'ls -la' for directory listing",
+            "Attack method: OS command injection via unsanitized input",
+            "Severity: CRITICAL - Could lead to full system compromise",
+            "Honeypot response: Return fake directory listing to engage attacker"
+        ],
+        "SSRF": [
+            "Detected URL in input parameter: http://localhost/admin",
+            "Attack type: Server-Side Request Forgery (SSRF)",
+            "Target: Internal admin endpoint - privilege escalation attempt",
+            "Risk: Could access internal services not exposed to internet",
+            "Strategy: Return fake admin panel HTML to study attacker behavior"
+        ],
+        "Authentication Bypass": [
+            "Detected credential stuffing attempt: admin:admin credentials",
+            "Common default credentials being tested",
+            "Attack stage: Initial access / privilege escalation",
+            "MITRE ATT&CK: T1078 (Valid Accounts)",
+            "Response: Return fake admin session to track post-auth behavior"
+        ],
+        "Insecure Deserialization": [
+            "Detected Python pickle exploit marker: __reduce__ method",
+            "Attack type: Insecure deserialization leading to RCE",
+            "Severity: CRITICAL - Remote code execution possible",
+            "Sophistication level: ADVANCED - Requires deep Python knowledge",
+            "Honeypot action: Log payload, return error to appear partially vulnerable"
+        ]
+    }
+    
+    return reasoning_map.get(attack_type, [
+        f"Analyzing {attack_type} attack pattern",
+        f"Payload detected: {payload[:50]}...",
+        "Assessing threat level and attacker sophistication",
+        "Generating appropriate honeypot response"
+    ])
+
+
+def generate_behavioral_profile(attacker_id: str, attack_type: str) -> dict:
+    """Generate behavioral profile for attacker."""
+    import random
+    from pathlib import Path
+    import json
+    
+    # Try to load actual attack history
+    attacks_file = Path("attacks.json")
+    attack_count = 1
+    sophistication = 30
+    
+    if attacks_file.exists():
+        try:
+            with open(attacks_file, 'r') as f:
+                all_attacks = [json.loads(line) for line in f if line.strip()]
+                attacker_attacks = [a for a in all_attacks if a.get("attacker_id") == attacker_id]
+                attack_count = len(attacker_attacks)
+                
+                # Calculate sophistication based on attack diversity
+                unique_types = len(set(a.get("attack_type") for a in attacker_attacks))
+                sophistication = min(20 + (unique_types * 15), 95)
+        except:
+            pass
+    
+    # Determine skill level
+    if attack_count >= 5 and sophistication > 70:
+        skill_level = "ADVANCED"
+    elif attack_count >= 3 or sophistication > 50:
+        skill_level = "INTERMEDIATE"
+    else:
+        skill_level = "NOVICE"
+    
+    # Detect tools based on attack patterns
+    tools = []
+    if attack_type in ["SQL Injection", "XSS"]:
+        tools.append("SQLMap" if attack_type == "SQL Injection" else "XSStrike")
+    if attack_count > 3:
+        tools.append("Burp Suite")
+    if sophistication > 70:
+        tools.append("Custom Scripts")
+    
+    return {
+        "skill_level": skill_level,
+        "tools": tools if tools else ["Manual Testing"],
+        "is_automated": attack_count > 5 and random.random() > 0.7,
+        "sophistication": sophistication,
+        "attack_count": attack_count
+    }
+
+
+def generate_threat_intelligence(ip: str, attack_type: str) -> dict:
+    """Generate threat intelligence data."""
+    import random
+    
+    # Calculate threat score based on attack type
+    threat_scores = {
+        "SQL Injection": random.randint(65, 85),
+        "XSS": random.randint(55, 75),
+        "Path Traversal": random.randint(70, 90),
+        "Command Injection": random.randint(80, 95),
+        "SSRF": random.randint(70, 85),
+        "Authentication Bypass": random.randint(75, 90),
+        "Insecure Deserialization": random.randint(85, 98)
+    }
+    
+    threat_score = threat_scores.get(attack_type, random.randint(50, 70))
+    
+    # Determine reputation
+    if threat_score > 80:
+        reputation = "MALICIOUS"
+    elif threat_score > 60:
+        reputation = "SUSPICIOUS"
+    else:
+        reputation = "UNKNOWN"
+    
+    # Fake geolocation
+    countries = ["United States", "China", "Russia", "Brazil", "India", "Germany", "Unknown"]
+    country = random.choice(countries) if ip != "127.0.0.1" else "Local (Testing)"
+    
+    # Fake ASN
+    asns = ["AS15169 (Google)", "AS16509 (Amazon)", "AS13335 (Cloudflare)", "Unknown ISP"]
+    asn = random.choice(asns) if ip != "127.0.0.1" else "Local Network"
+    
+    return {
+        "threat_score": threat_score,
+        "reputation": reputation,
+        "country": country,
+        "asn": asn,
+        "is_vpn": random.random() > 0.7,
+        "is_tor": random.random() > 0.9,
+        "previous_attacks": random.randint(0, 50)
+    }
+
+
+def generate_intelligence_analysis(attack_type: str, data: dict) -> dict:
+    """Generate intelligence analysis."""
+    import random
+    
+    # MITRE ATT&CK mapping
+    mitre_map = {
+        "SQL Injection": "T1190 - Exploit Public-Facing Application",
+        "XSS": "T1059 - Command and Scripting Interpreter",
+        "Path Traversal": "T1083 - File and Directory Discovery",
+        "Command Injection": "T1059.004 - Unix Shell",
+        "SSRF": "T1071 - Application Layer Protocol",
+        "Authentication Bypass": "T1078 - Valid Accounts",
+        "Insecure Deserialization": "T1203 - Exploitation for Client Execution"
+    }
+    
+    return {
+        "MITRE Technique": mitre_map.get(attack_type, "T1190"),
+        "Attack Stage": random.choice(["Initial Access", "Execution", "Privilege Escalation", "Discovery"]),
+        "Confidence": f"{random.randint(75, 98)}%",
+        "Similar APTs": random.choice(["APT28", "APT29", "Lazarus Group", "None Matched"]),
+        "Recommendation": "Continue monitoring, log all activity, maintain deception"
+    }
+
+
 
 
 # =========================
