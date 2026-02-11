@@ -455,7 +455,9 @@ async def demo_controller_endpoint(request: Request) -> HTMLResponse:
         from pathlib import Path
         controller_file = Path("demo_controller.html")
         if controller_file.exists():
-            return HTMLResponse(content=controller_file.read_text(encoding='utf-8'))
+            # Read as binary and decode with error handling for emojis
+            content = controller_file.read_bytes().decode('utf-8', errors='replace')
+            return HTMLResponse(content=content)
         else:
             return HTMLResponse(content="<h1>Demo controller not found</h1>", status_code=404)
     except Exception as e:
