@@ -7,6 +7,7 @@ from typing import Optional
 from uuid import uuid4
 from datetime import datetime
 import secrets
+import asyncio
 
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -455,13 +456,16 @@ async def demo_controller_endpoint(request: Request) -> HTMLResponse:
         from pathlib import Path
         controller_file = Path("demo_controller.html")
         if controller_file.exists():
-            # Read as binary and decode with error handling for emojis
-            content = controller_file.read_bytes().decode('utf-8', errors='replace')
+            # Use latin-1 which can decode any byte sequence
+            with open(controller_file, 'r', encoding='latin-1') as f:
+                content = f.read()
             return HTMLResponse(content=content)
         else:
             return HTMLResponse(content="<h1>Demo controller not found</h1>", status_code=404)
     except Exception as e:
-        return HTMLResponse(content=f"<h1>Error loading controller</h1><p>{str(e)}</p>", status_code=500)
+        import traceback
+        error_details = traceback.format_exc()
+        return HTMLResponse(content=f"<h1>Error loading controller</h1><pre>{error_details}</pre>", status_code=500)
 
 
 @app.websocket("/ws/dashboard")
@@ -554,6 +558,10 @@ async def websocket_demo(websocket: WebSocket):
 async def broadcast_demo_update(data: dict):
     """Broadcast update to all demo dashboard connections with enhanced analytics."""
     import random
+    import asyncio # Fix for name 'asyncio' is not defined error
+    
+    print(f"[DEBUG] broadcast_demo_update called with type: {data.get('type')}")
+    print(f"[DEBUG] Number of demo connections: {len(_demo_connections)}")
     
     # Enhance data with analytics if it's an attack
     if data.get("type") == "attack":
