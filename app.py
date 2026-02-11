@@ -257,6 +257,21 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
         # Get MITRE mapping
         mitre_data = get_mitre_summary(attacker_id)
         
+        # Get behavioral profile
+        behavioral_data = {
+            "skill_level": str(profile.skill_level).split('.')[-1] if profile else "UNKNOWN",
+            "attack_count": profile.attack_count if profile else 0,
+            "attack_types": list(profile.attack_types) if profile and hasattr(profile, 'attack_types') else [attack_type],
+            "first_seen": profile.first_seen.isoformat() if profile and hasattr(profile, 'first_seen') else datetime.now().isoformat()
+        }
+        
+        # Get threat intelligence
+        threat_data = {
+            "threat_level": str(threat_profile.threat_level).split('.')[-1] if threat_profile else "MEDIUM",
+            "risk_score": threat_profile.risk_score if threat_profile and hasattr(threat_profile, 'risk_score') else 50,
+            "is_persistent": threat_profile.is_persistent if threat_profile and hasattr(threat_profile, 'is_persistent') else False
+        }
+        
         await broadcast_demo_update({
             "type": "attack",
             "attacker_id": attacker_id,
@@ -269,7 +284,9 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
             "skill_level": str(profile.skill_level).split('.')[-1] if profile else "UNKNOWN",
             "llm_reasoning": reasoning_steps,
             "prediction": prediction_data,
-            "mitre": mitre_data
+            "mitre": mitre_data,
+            "behavioral_profile": behavioral_data,
+            "threat_intelligence": threat_data
         })
     except Exception as e:
         print(f"[ERROR] Failed to broadcast to demo dashboard: {e}")

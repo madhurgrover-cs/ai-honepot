@@ -1106,6 +1106,100 @@ def get_demo_dashboard_html() -> str:
                         });
                     }
                 }
+                
+                // Update Behavioral Profile if available
+                if (data.behavioral_profile) {
+                    const behavioralProfileEl = document.getElementById('behavioral-profile');
+                    if (behavioralProfileEl) {
+                        const bp = data.behavioral_profile;
+                        behavioralProfileEl.innerHTML = `
+                            <div style="padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                    <div>
+                                        <div style="color: #aaa; font-size: 0.9em;">Skill Level</div>
+                                        <div style="color: #00ff41; font-size: 1.2em; font-weight: bold;">${bp.skill_level || 'UNKNOWN'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: #aaa; font-size: 0.9em;">Attack Count</div>
+                                        <div style="color: #00d4ff; font-size: 1.2em; font-weight: bold;">${bp.attack_count || 0}</div>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <div style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">Attack Types</div>
+                                    <div style="color: #fff;">${(bp.attack_types || []).join(', ') || 'N/A'}</div>
+                                </div>
+                                <div style="color: #aaa; font-size: 0.85em;">
+                                    First Seen: ${new Date(bp.first_seen).toLocaleString()}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Update Threat Intelligence if available
+                if (data.threat_intelligence) {
+                    const threatIntelEl = document.getElementById('threat-intel');
+                    if (threatIntelEl) {
+                        const ti = data.threat_intelligence;
+                        threatIntelEl.innerHTML = `
+                            <div style="padding: 15px; background: rgba(231, 76, 60, 0.1); border: 2px solid #e74c3c; border-radius: 8px;">
+                                <div style="margin-bottom: 15px;">
+                                    <div style="color: #aaa; font-size: 0.9em;">Threat Level</div>
+                                    <div style="color: #e74c3c; font-size: 1.3em; font-weight: bold;">${ti.threat_level || 'MEDIUM'}</div>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <div style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">Risk Score</div>
+                                    <div style="background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; height: 20px;">
+                                        <div style="background: linear-gradient(90deg, #00ff41, #e74c3c); height: 100%; width: ${ti.risk_score || 50}%; border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="color: #00d4ff; margin-top: 5px;">${ti.risk_score || 50}/100</div>
+                                </div>
+                                <div style="color: ${ti.is_persistent ? '#e74c3c' : '#00ff41'}; font-weight: bold;">
+                                    ${ti.is_persistent ? '⚠️ Persistent Threat' : '✓ Non-Persistent'}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Update Intelligence Analysis
+                const intelligenceAnalysisEl = document.getElementById('intelligence-analysis');
+                if (intelligenceAnalysisEl) {
+                    intelligenceAnalysisEl.innerHTML = `
+                        <div style="padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
+                            <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 10px;">Attack Summary</div>
+                            <div style="color: #fff; margin-bottom: 15px;">
+                                Detected ${data.attack_type || 'Unknown'} attack from ${data.ip || 'Unknown IP'} targeting ${data.endpoint || '/search'} endpoint.
+                            </div>
+                            <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 10px;">Assessment</div>
+                            <div style="color: #fff;">
+                                Attacker demonstrates ${data.skill_level || 'UNKNOWN'} skill level with ${data.threat_level || 'MEDIUM'} threat rating. 
+                                ${data.prediction && data.prediction.next_attacks && data.prediction.next_attacks.length > 0 ? 
+                                  'Predicted next attack: ' + data.prediction.next_attacks[0].attack_type : 
+                                  'Monitoring for follow-up attacks.'}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Update Attack Timeline
+                const attackTimelineEl = document.getElementById('attack-timeline');
+                if (attackTimelineEl) {
+                    const timelineItem = document.createElement('div');
+                    timelineItem.style.cssText = 'padding: 12px; background: rgba(0, 212, 255, 0.1); border-left: 3px solid #00d4ff; border-radius: 5px; margin-bottom: 10px;';
+                    timelineItem.innerHTML = `
+                        <div style="color: #00d4ff; font-weight: bold; margin-bottom: 5px;">${new Date().toLocaleTimeString()} - ${data.attack_type || 'Unknown Attack'}</div>
+                        <div style="color: #aaa; font-size: 0.9em;">From: ${data.ip || 'Unknown'}</div>
+                        <div style="color: #fff; font-family: monospace; font-size: 0.85em; margin-top: 5px;">${data.payload || 'N/A'}</div>
+                    `;
+                    // Remove "waiting" message if it exists
+                    const waitingMsg = attackTimelineEl.querySelector('.waiting-message');
+                    if (waitingMsg) {
+                        waitingMsg.remove();
+                    }
+                    // Add new item at the top
+                    attackTimelineEl.insertBefore(timelineItem, attackTimelineEl.firstChild);
+                }
             }
         };
         
