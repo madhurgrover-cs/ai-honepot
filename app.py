@@ -451,12 +451,15 @@ async def demo_dashboard_endpoint(request: Request) -> HTMLResponse:
 @app.get("/controller", response_class=HTMLResponse)
 async def demo_controller_endpoint(request: Request) -> HTMLResponse:
     """Serve the demo controller interface."""
-    from pathlib import Path
-    controller_file = Path("demo_controller.html")
-    if controller_file.exists():
-        return HTMLResponse(content=controller_file.read_text())
-    else:
-        return HTMLResponse(content="<h1>Demo controller not found</h1>", status_code=404)
+    try:
+        from pathlib import Path
+        controller_file = Path("demo_controller.html")
+        if controller_file.exists():
+            return HTMLResponse(content=controller_file.read_text(encoding='utf-8'))
+        else:
+            return HTMLResponse(content="<h1>Demo controller not found</h1>", status_code=404)
+    except Exception as e:
+        return HTMLResponse(content=f"<h1>Error loading controller</h1><p>{str(e)}</p>", status_code=500)
 
 
 @app.websocket("/ws/dashboard")
