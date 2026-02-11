@@ -248,6 +248,3 @@ Export STIX bundles to share with community and feed IOCs into SIEM
 - **Full Documentation:** See repository README
 - **Technical Details:** See `technical_deep_dive.md`
 
----
-
-**Built for cybersecurity research and defense** 🛡️
