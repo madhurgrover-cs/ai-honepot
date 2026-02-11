@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +33,7 @@
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .header p {
@@ -51,13 +52,13 @@
             background: white;
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .attack-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
         }
 
         .attack-header {
@@ -119,7 +120,7 @@
 
         .attack-button:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .attack-button:active {
@@ -131,7 +132,7 @@
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .dashboard-section h2 {
@@ -168,7 +169,7 @@
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .instructions h2 {
@@ -216,8 +217,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
         }
 
         .executing {
@@ -225,10 +233,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎯 AI Honeypot - Live Attack Demo</h1>
+            <h1>&#127919; AI Honeypot - Live Attack Demo</h1>
             <p>Click buttons to execute attacks and watch the dashboard update in real-time!</p>
         </div>
 
@@ -237,13 +246,15 @@
         </div>
 
         <div class="instructions">
-            <h2>📋 Demo Instructions</h2>
+            <h2>&#128203; Demo Instructions</h2>
             <ol>
-                <li><strong>Open Dashboard:</strong> Click "Open Dashboard" below to open the real-time dashboard in a new tab</li>
+                <li><strong>Open Dashboard:</strong> Click "Open Dashboard" below to open the real-time dashboard in a
+                    new tab</li>
                 <li><strong>Position Windows:</strong> Arrange this page and the dashboard side-by-side</li>
                 <li><strong>Execute Attacks:</strong> Click each attack button in sequence (1-7)</li>
                 <li><strong>Watch Dashboard:</strong> Point out the real-time updates after each attack</li>
-                <li><strong>Show Advanced Features:</strong> Use the API buttons to demonstrate additional capabilities</li>
+                <li><strong>Show Advanced Features:</strong> Use the API buttons to demonstrate additional capabilities
+                </li>
             </ol>
         </div>
 
@@ -290,7 +301,8 @@
                     Reflected XSS attack injecting JavaScript to execute in victim's browser
                 </div>
                 <div class="attack-payload">&lt;script&gt;alert('XSS')&lt;/script&gt;</div>
-                <button class="attack-button" onclick="executeAttack(2, '/search?q=<script>alert(\\'XSS\\')</script>', 'XSS')">
+                <button class="attack-button"
+                    onclick="executeAttack(2, '/search?q=<script>alert(\\'XSS\\')</script>', 'XSS')">
                     🚀 Execute XSS Attack
                 </button>
             </div>
@@ -305,7 +317,8 @@
                     Directory traversal attempting to access /etc/passwd file
                 </div>
                 <div class="attack-payload">../../etc/passwd</div>
-                <button class="attack-button" onclick="executeAttack(3, '/search?q=../../etc/passwd', 'Path Traversal')">
+                <button class="attack-button"
+                    onclick="executeAttack(3, '/search?q=../../etc/passwd', 'Path Traversal')">
                     🚀 Execute Path Traversal
                 </button>
             </div>
@@ -350,7 +363,8 @@
                     Credential stuffing with default admin credentials
                 </div>
                 <div class="attack-payload">admin:admin</div>
-                <button class="attack-button" onclick="executeAttack(6, '/admin?user=admin&pass=admin:admin', 'Authentication Bypass')">
+                <button class="attack-button"
+                    onclick="executeAttack(6, '/admin?user=admin&pass=admin:admin', 'Authentication Bypass')">
                     🚀 Execute Auth Bypass
                 </button>
             </div>
@@ -359,7 +373,8 @@
             <div class="attack-card">
                 <div class="attack-header">
                     <div class="attack-number">7</div>
-                    <div class="attack-title">Insecure Deserialization <span class="badge badge-owasp">OWASP</span></div>
+                    <div class="attack-title">Insecure Deserialization <span class="badge badge-owasp">OWASP</span>
+                    </div>
                 </div>
                 <div class="attack-description">
                     Python pickle deserialization exploit for remote code execution
@@ -398,11 +413,13 @@
         <div class="instructions" style="background: #2c3e50; color: white;">
             <h2 style="color: white;">💡 Talking Points for Judges</h2>
             <ul style="margin-left: 20px; line-height: 2;">
-                <li><strong>Real-time Detection:</strong> "Notice how the dashboard updates instantly via WebSockets"</li>
+                <li><strong>Real-time Detection:</strong> "Notice how the dashboard updates instantly via WebSockets"
+                </li>
                 <li><strong>AI Prediction:</strong> "Our Markov chain predicts the next attack with 60%+ accuracy"</li>
                 <li><strong>MITRE Mapping:</strong> "Every attack is automatically mapped to ATT&CK techniques"</li>
                 <li><strong>Auto Playbooks:</strong> "Incident response procedures generated automatically"</li>
-                <li><strong>Production Ready:</strong> "All security vulnerabilities fixed - rate limiting, signed cookies, resource limits"</li>
+                <li><strong>Production Ready:</strong> "All security vulnerabilities fixed - rate limiting, signed
+                    cookies, resource limits"</li>
             </ul>
         </div>
     </div>
@@ -437,7 +454,7 @@
             const button = event.target;
             button.classList.add('executing');
             button.textContent = '⏳ Executing...';
-            
+
             updateStatus(`🚀 Executing Attack ${number}: ${attackName}`);
 
             try {
@@ -445,16 +462,16 @@
                 const response = await fetch(url, {
                     credentials: 'include'
                 });
-                
+
                 if (response.ok) {
                     updateStatus(`✅ Attack ${number} executed! Check dashboard for updates`);
-                    
+
                     // Store cookie for later API calls
                     const cookies = document.cookie;
                     if (cookies) {
                         attackerCookie = cookies.split(';').find(c => c.includes('attacker_id'));
                     }
-                    
+
                     setTimeout(() => {
                         button.classList.remove('executing');
                         button.textContent = `✓ ${attackName} Executed`;
@@ -543,4 +560,5 @@
         });
     </script>
 </body>
+
 </html>
