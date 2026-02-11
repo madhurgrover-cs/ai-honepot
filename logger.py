@@ -248,3 +248,37 @@ def log_attack(
         payload=payload,
         llm_response=llm_response
     )
+
+
+def get_attacker_history(attacker_id: str) -> list:
+    """
+    Get attack history for a specific attacker.
+    
+    Args:
+        attacker_id: The attacker ID to look up
+        
+    Returns:
+        List of attack events for this attacker
+    """
+    return _default_logger.get_attacker_history(attacker_id)
+
+
+def get_all_attacks() -> list:
+    """
+    Get all attack events from the JSON log.
+    
+    Returns:
+        List of all attack events
+    """
+    if not _default_logger.config.json_log_file or not _default_logger.config.json_log_file.exists():
+        return []
+    
+    attacks = []
+    try:
+        with open(_default_logger.config.json_log_file, "r", encoding=_default_logger.config.encoding) as f:
+            for line in f:
+                attacks.append(json.loads(line))
+    except Exception as e:
+        _default_logger.logger.error(f"Failed to read all attacks: {e}")
+    
+    return attacks

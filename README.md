@@ -9,41 +9,81 @@ A sophisticated, AI-powered deceptive honeypot designed to detect, analyze, and 
 
 ## 🚀 Key Features
 
-The AI Honeypot includes **13 intelligence modules** working in harmony to provide a complete threat detection and analysis platform:
+The AI Honeypot includes **21 intelligence modules** working in harmony to provide a complete threat detection and analysis platform:
 
 ### 🧠 Advanced Intelligence
 - **LLM-Powered Responses**: Generates realistic, context-aware content to keep attackers engaged.
 - **ML Attack Classification**: Uses machine learning to classify attacks and detect anomalies in real-time.
 - **Behavioral Profiling**: Identifies attacker skill levels (Novice, Intermediate, Advanced, Automated).
 - **Campaign Detection**: correlates multi-vector attacks and tracks campaigns across sessions.
+- **🆕 Attack Prediction**: AI-powered Markov chain model predicts next attack vectors and time-to-compromise.
+- **🆕 MITRE ATT&CK Mapping**: Maps attacks to industry-standard framework with APT group matching.
 
 ### 🛡️ Deception & Evasion
 - **Realistic Latency**: Simulates natural processing delays (50-800ms) to avoid detection as a honeypot.
 - **Fake Vulnerabilities**: Intentionally exposes fake flaws to lure attackers into revealing their methods.
 - **Canary Tokens**: Embeds unique, trackable tokens in responses (credentials, API keys) to detect data leaks.
 - **Tool Poisoning**: Specifically targets and confuses common attack tools like SQLMap and Burp Suite.
+- **🆕 Adaptive Deception**: Adjusts difficulty based on attacker skill level (easy for novices, rabbit holes for experts).
 
 ### 📊 Monitoring & Analysis
 - **Real-Time Dashboard**: Live visualization of attacks, traffic, and threat metrics via WebSocket.
 - **Threat Intelligence**: Integrates with AbuseIPDB and VirusTotal for external IP reputation scoring.
 - **Browser Fingerprinting**: Advanced tracking using Canvas, WebGL, and AudioContext fingerprinting.
 - **Interactive Shell**: specific simulation of a compromised environment with fake file system and admin panels.
+- **🆕 Forensic Timeline**: Complete attack replay with adjustable speed and narrative generation.
+- **🆕 Canary Analytics**: Advanced tracking of token extraction, usage, and effectiveness scoring.
+
+### 🔄 Automation & Integration
+- **🆕 Threat Intelligence Sharing**: Export IOCs, STIX 2.1 bundles, and threat reports.
+- **🆕 Incident Response Playbooks**: Auto-generate response guides and Sigma rules for SIEM.
+- **🆕 Data Export**: CSV, JSON, and formatted exports for analysis.
+- **🆕 Docker Deployment**: One-command deployment with docker-compose.
 
 ## 📂 Project Structure
 
 ```
-├── app.py                 # Main FastAPI application entry point
-├── llm_engine.py          # LLM-based response generation
-├── ml_classifier.py       # Machine learning for attack classification
-├── dashboard.py           # Real-time web dashboard logic
-├── deception_engine.py    # Handling timing, errors, and realism
-├── behavior_analyzer.py   # Skill level and behavior analysis
-├── threat_intel.py        # External threat intelligence integration
-├── alerts.py              # Notification system (Slack/Discord)
-└── attacks.log            # Structured log of all detected activities
+├── app.py                   # Main FastAPI application entry point
+├── llm_engine.py            # LLM-based response generation
+├── ml_classifier.py         # Machine learning for attack classification
+├── dashboard.py             # Real-time web dashboard logic
+├── deception_engine.py      # Handling timing, errors, and realism
+├── behavioral_analyzer.py   # Skill level and behavior analysis
+├── threat_intel.py          # External threat intelligence integration
+├── alerts.py                # Notification system (Slack/Discord)
+├── attack_predictor.py      # 🆕 AI-powered attack prediction
+├── mitre_mapper.py          # 🆕 MITRE ATT&CK framework mapping
+├── forensic_timeline.py     # 🆕 Attack replay and forensics
+├── canary_analytics.py      # 🆕 Canary token analytics
+├── adaptive_deception.py    # 🆕 Skill-adaptive deception
+├── threat_sharing.py        # 🆕 IOC/STIX threat intelligence export
+├── playbook_generator.py    # 🆕 Incident response automation
+├── export_engine.py         # 🆕 Multi-format data export
+├── Dockerfile               # 🆕 Docker containerization
+├── docker-compose.yml       # 🆕 One-command deployment
+└── attacks.log              # Structured log of all detected activities
 ```
 
 ## ⚡ Quick Start
+
+### 🐳 Docker (Recommended)
+
+The fastest way to get started:
+
+```bash
+# Clone the repository
+git clone https://github.com/madhurgrover-cs/ai-honepot.git
+cd ai-honepot
+
+# Start with Docker Compose
+docker-compose up --build
+```
+
+Access the honeypot at `http://localhost:8000`
+
+See [DOCKER.md](DOCKER.md) for more details.
+
+### 🐍 Manual Installation
 
 ### Prerequisites
 - Python 3.8+

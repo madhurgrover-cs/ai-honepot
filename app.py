@@ -5,6 +5,7 @@ FastAPI-based deception layer that mimics a vulnerable web application.
 
 from typing import Optional
 from uuid import uuid4
+from datetime import datetime
 
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -24,6 +25,16 @@ from counter_intelligence import poison_tool_response, fingerprint_attacker, inj
 from fingerprinting import track_browser_fingerprint, find_related_attackers, get_fingerprinting_script
 from alerts import send_attack_alert, send_brute_force_alert, send_coordinated_attack_alert, send_anomaly_alert, send_threat_ip_alert, configure_alerts, AlertSeverity
 from demo_dashboard import get_demo_dashboard_html, update_demo_attack, update_demo_llm_thinking, update_demo_analysis, update_demo_threat_intel, update_demo_behavioral
+
+# NEW: Hackathon Enhancement Modules
+from attack_predictor import track_attack_for_prediction, get_attack_prediction, get_prediction_summary
+from mitre_mapper import map_attack_to_mitre, get_attacker_ttps, get_mitre_matrix, match_to_apt_groups
+from forensic_timeline import record_attack_event, record_canary_extraction, record_tool_detection, get_attack_timeline, generate_replay_script, generate_attack_narrative, get_timeline_html
+from canary_analytics import register_canary_token, record_canary_usage, get_canary_journey, get_canary_effectiveness, get_attacker_canaries, get_canary_dashboard_data
+from adaptive_deception import get_deception_strategy, adapt_response
+from threat_sharing import generate_iocs, generate_stix_bundle, generate_threat_report
+from playbook_generator import generate_incident_playbook, generate_sigma_rule
+from export_engine import export_json, export_csv, export_attacks
 
 
 # =========================
@@ -166,6 +177,21 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
         data_leaked=("users" if attack_type == "SQL Injection" else None)
     )
     
+    # NEW: Track for attack prediction
+    track_attack_for_prediction(attacker_id, attack_type, "/search")
+    
+    # NEW: Map to MITRE ATT&CK
+    mitre_mappings = map_attack_to_mitre(attack_type, payload, attacker_id)
+    
+    # NEW: Record in forensic timeline
+    record_attack_event(
+        attacker_id=attacker_id,
+        attack_type=attack_type,
+        endpoint="/search",
+        payload=payload,
+        success=(attack_type != "NORMAL")
+    )
+    
     # Generate honeypot response (now includes behavioral analysis)
     result = generate_response(
         endpoint="/search",
@@ -173,6 +199,13 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
         attacker_id=attacker_id,
         user_agent=user_agent
     )
+    
+    # NEW: Apply adaptive deception
+    # Get skill level from behavioral profile (if available)
+    from behavioral_analyzer import get_behavioral_profile
+    profile = get_behavioral_profile(attacker_id)
+    skill_level = profile.skill_level if profile else "intermediate"
+    result = adapt_response(result, attacker_id, skill_level)
     
     # Prepend security warnings if any
     if security_warnings:
@@ -187,6 +220,22 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
         payload=payload,
         llm_response=result
     )
+    
+    # Broadcast to demo dashboard
+    try:
+        await broadcast_demo_update({
+            "type": "attack",
+            "attacker_id": attacker_id,
+            "ip": request.client.host if request.client else "unknown",
+            "endpoint": "/search",
+            "attack_type": attack_type,
+            "payload": payload,
+            "timestamp": datetime.now().isoformat(),
+            "threat_level": str(threat_profile.threat_level).split('.')[-1] if threat_profile else "MEDIUM",
+            "skill_level": str(profile.skill_level).split('.')[-1] if profile else "UNKNOWN"
+        })
+    except Exception as e:
+        print(f"[ERROR] Failed to broadcast to demo dashboard: {e}")
     
     return create_response(result, attacker_id)
 
@@ -399,7 +448,7 @@ async def demonstration_dashboard():
 
 
 # Global storage for demo WebSocket connections
-_demo_connections: list[WebSocket] = []
+_demo_connections = []
 
 
 @app.websocket("/ws/demo")
@@ -423,18 +472,162 @@ async def websocket_demo(websocket: WebSocket):
 
 async def broadcast_demo_update(data: dict):
     """Broadcast update to all demo dashboard connections."""
-    import json
     disconnected = []
     
     for connection in _demo_connections:
         try:
             await connection.send_json(data)
-        except:
+        except Exception as e:
+            print(f"[WARNING] Failed to send to demo dashboard connection: {e}")
             disconnected.append(connection)
     
     # Remove disconnected clients
     for connection in disconnected:
         _demo_connections.remove(connection)
+
+
+# =========================
+# NEW: HACKATHON ENHANCEMENT ENDPOINTS
+# =========================
+@app.get("/api/prediction/{attacker_id}")
+async def get_prediction(attacker_id: str):
+    """Get attack prediction for attacker."""
+    return get_prediction_summary(attacker_id)
+
+
+@app.get("/api/mitre/{attacker_id}")
+async def get_mitre(attacker_id: str):
+    """Get MITRE ATT&CK mapping for attacker."""
+    ttps = get_attacker_ttps(attacker_id)
+    matrix = get_mitre_matrix(attacker_id)
+    apt_matches = match_to_apt_groups(attacker_id)
+    
+    return {
+        "ttps": ttps,
+        "matrix": matrix,
+        "apt_matches": [{"group": name, "similarity": f"{score:.1%}"} for name, score in apt_matches]
+    }
+
+
+@app.get("/api/timeline/{attacker_id}")
+async def get_timeline(attacker_id: str):
+    """Get forensic timeline for attacker."""
+    timeline = get_attack_timeline(attacker_id)
+    if not timeline:
+        return {"error": "No timeline data"}
+    
+    return {
+        "attacker_id": attacker_id,
+        "duration": str(timeline.get_duration()),
+        "total_attacks": timeline.total_attacks,
+        "success_rate": f"{timeline.successful_attacks}/{timeline.total_attacks}",
+        "attack_rate": f"{timeline.get_attack_rate():.2f}/min",
+        "tools_used": timeline.tools_used,
+        "endpoints_targeted": timeline.endpoints_targeted
+    }
+
+
+@app.get("/api/timeline/{attacker_id}/replay")
+async def get_replay(attacker_id: str, speed: str = "5x"):
+    """Get attack replay script."""
+    from forensic_timeline import ReplaySpeed
+    
+    speed_map = {
+        "realtime": ReplaySpeed.REALTIME,
+        "2x": ReplaySpeed.FAST_2X,
+        "5x": ReplaySpeed.FAST_5X,
+        "10x": ReplaySpeed.FAST_10X,
+        "instant": ReplaySpeed.INSTANT
+    }
+    
+    replay_speed = speed_map.get(speed, ReplaySpeed.FAST_5X)
+    return {"replay_script": generate_replay_script(attacker_id, replay_speed)}
+
+
+@app.get("/api/timeline/{attacker_id}/narrative")
+async def get_narrative(attacker_id: str):
+    """Get attack narrative."""
+    return {"narrative": generate_attack_narrative(attacker_id)}
+
+
+@app.get("/api/canary/dashboard")
+async def canary_dashboard():
+    """Get canary analytics dashboard data."""
+    return get_canary_dashboard_data()
+
+
+@app.get("/api/canary/{attacker_id}")
+async def get_canary_stats(attacker_id: str):
+    """Get canary statistics for attacker."""
+    return get_attacker_canaries(attacker_id)
+
+
+@app.get("/api/canary/effectiveness")
+async def canary_effectiveness():
+    """Get canary effectiveness report."""
+    return get_canary_effectiveness()
+
+
+@app.get("/api/export/attacks")
+async def export_attack_log():
+    """Export attack log as CSV."""
+    from logger import get_all_attacks
+    attacks = get_all_attacks()
+    csv_data = export_attacks(attacks)
+    
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=attacks.csv"}
+    )
+
+
+@app.get("/api/threat-intel/{attacker_id}/iocs")
+async def get_iocs(attacker_id: str):
+    """Generate IOCs for attacker."""
+    # Get attacker data
+    from logger import get_attacker_history
+    history = get_attacker_history(attacker_id)
+    
+    ips = list(set([h.get("ip", "") for h in history if h.get("ip")]))
+    attack_types = list(set([h.get("attack_type", "") for h in history if h.get("attack_type")]))
+    payloads = [h.get("payload", "") for h in history if h.get("payload")]
+    
+    return generate_iocs(attacker_id, ips, attack_types, payloads)
+
+
+@app.get("/api/threat-intel/{attacker_id}/stix")
+async def get_stix(attacker_id: str):
+    """Generate STIX bundle for attacker."""
+    from logger import get_attacker_history
+    from behavioral_analyzer import get_behavioral_profile
+    
+    history = get_attacker_history(attacker_id)
+    profile = get_behavioral_profile(attacker_id)
+    
+    attack_data = {
+        "skill_level": profile.skill_level if profile else "unknown",
+        "attack_types": list(set([h.get("attack_type", "") for h in history]))
+    }
+    
+    return generate_stix_bundle(attacker_id, attack_data)
+
+
+@app.get("/api/playbook/{attack_type}")
+async def get_playbook(attack_type: str):
+    """Generate incident response playbook."""
+    attack_details = {
+        "severity": "high" if "sql" in attack_type.lower() else "medium",
+        "indicators": [f"Attack type: {attack_type}"]
+    }
+    
+    playbook = generate_incident_playbook(attack_type, attack_details)
+    
+    return Response(
+        content=playbook,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f"attachment; filename={attack_type}_playbook.md"}
+    )
 
 
 # =========================
