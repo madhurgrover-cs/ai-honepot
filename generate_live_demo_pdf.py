@@ -375,65 +375,58 @@ def create_live_demo_pdf():
     story.append(Spacer(1, 0.2*inch))
     
     # ==================== ADVANCED FEATURES DEMO ====================
-    story.append(Paragraph("ADVANCED FEATURES DEMONSTRATION", section_style))
-    
-    story.append(Paragraph("Feature 1: AI Prediction", attack_style))
-    story.append(Paragraph("Navigate to:", step_style))
+    story.append(Paragraph("PART 2: POST-EXPLOITATION ANALYSIS (USING ATTACKER ID)", section_style))
     story.append(Paragraph(
-        "<font name='Courier' size=8>http://localhost:8000/api/prediction/[attacker_id]</font>",
-        url_style
-    ))
-    story.append(Paragraph(
-        "\"This shows our Markov chain predictions. Based on the attack sequence, "
-        "it predicts the next likely attack with probability scores.\"",
+        "By this point, we have successfully tracked the attacker's unique ID across the session. "
+        "Now we use this ID to generate deep forensic insights:",
         body_style
     ))
     
-    story.append(Paragraph("Feature 2: MITRE ATT&CK Mapping", attack_style))
-    story.append(Paragraph("Navigate to:", step_style))
+    story.append(Paragraph("Feature 1: AI Prediction (Probabilistic Modeling)", attack_style))
+    story.append(Paragraph("Click Button: <b>🤖 AI Prediction</b>", step_style))
     story.append(Paragraph(
-        "<font name='Courier' size=8>http://localhost:8000/api/mitre/[attacker_id]</font>",
-        url_style
+        "\"Using the captured Attacker ID, our Markov chain model analyzes their specific sequence. "
+        "It predicts the next likely attack vector (e.g., 'Admin Access') with calculated probability.\"",
+        body_style
     ))
+    
+    story.append(Paragraph("Feature 2: MITRE ATT&CK Matrix", attack_style))
+    story.append(Paragraph("Click Button: <b>🎯 MITRE Mapping</b>", step_style))
     story.append(Paragraph(
-        "\"Every attack is automatically mapped to MITRE ATT&CK techniques. "
-        "This shows tactics, techniques, and even matches to known APT groups.\"",
+        "\"We map this specific attacker's actions to the MITRE ATT&CK framework. "
+        "You can see the Tactics (e.g., Initial Access) and Techniques (e.g., T1190) used in this session.\"",
         body_style
     ))
     
     story.append(Paragraph("Feature 3: Forensic Timeline", attack_style))
-    story.append(Paragraph("Navigate to:", step_style))
+    story.append(Paragraph("Click Button: <b>📅 Forensic Timeline</b>", step_style))
     story.append(Paragraph(
-        "<font name='Courier' size=8>http://localhost:8000/api/timeline/[attacker_id]</font>",
-        url_style
-    ))
-    story.append(Paragraph(
-        "\"This is a complete forensic timeline with timestamps, attack types, and payloads. "
-        "We can even generate a replay script to recreate the attack.\"",
+        "\"This generates a complete chronological timeline for this Attacker ID. "
+        "Every payload, timestamp, and response is logged for forensic reconstruction.\"",
         body_style
     ))
     
-    story.append(Paragraph("Feature 4: Incident Playbook", attack_style))
-    story.append(Paragraph("Navigate to:", step_style))
+    story.append(Paragraph("Feature 4: Incident Playbook Generation", attack_style))
+    story.append(Paragraph("Click Button: <b>📖 Incident Playbook</b>", step_style))
     story.append(Paragraph(
-        "<font name='Courier' size=8>http://localhost:8000/api/playbook/SQL%20Injection</font>",
-        url_style
-    ))
-    story.append(Paragraph(
-        "\"For each attack type, we auto-generate an incident response playbook. "
-        "This includes detection rules, containment steps, and remediation actions.\"",
+        "\"Based on the dominant attack type (e.g., SQL Injection), the system auto-generates "
+        "an actionable incident response playbook with detection rules and containment steps.\"",
         body_style
     ))
     
-    story.append(Paragraph("Feature 5: STIX Export", attack_style))
-    story.append(Paragraph("Navigate to:", step_style))
+    story.append(Paragraph("Feature 5: STIX 2.1 Threat Intel Export", attack_style))
+    story.append(Paragraph("Click Button: <b>🔗 STIX Export</b>", step_style))
     story.append(Paragraph(
-        "<font name='Courier' size=8>http://localhost:8000/api/threat-intel/[attacker_id]/stix</font>",
-        url_style
+        "\"We package all intelligence about this Attacker ID into a standardized STIX 2.1 JSON bundle. "
+        "This is ready for immediate sharing with other SOCs or import into a SIEM.\"",
+        body_style
     ))
+    
+    story.append(Paragraph("Feature 6: Canary Token Analytics", attack_style))
+    story.append(Paragraph("Click Button: <b>🕯️ Canary Analytics</b>", step_style))
     story.append(Paragraph(
-        "\"We export threat intelligence in STIX 2.1 format - the industry standard. "
-        "This can be imported into any SIEM or shared with other organizations.\"",
+        "\"If the attacker accessed our honeytokens (fake credentials/files), this dashboard shows "
+        "exactly where and how those tokens were used, revealing their post-compromise movement.\"",
         body_style
     ))
     
