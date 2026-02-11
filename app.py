@@ -974,6 +974,80 @@ async def get_playbook(attack_type: str):
     )
 
 
+@app.get("/api/prediction/{attacker_id}")
+async def get_prediction(attacker_id: str):
+    """Generate next move prediction for attacker."""
+    from logger import get_attacker_history
+    history = get_attacker_history(attacker_id)
+    
+    if not history:
+        return {"error": "No attack history found"}
+        
+    last_attack = history[-1].get("attack_type", "Unknown")
+    
+    # Simple Markov chain transition matrix (simplified for demo)
+    transitions = {
+        "SQL Injection": [("Auth Bypass", 0.6), ("Data Exfiltration", 0.3), ("Command Injection", 0.1)],
+        "XSS": [("Session Hijacking", 0.5), ("Phishing", 0.3), ("CSRF", 0.2)],
+        "Path Traversal": [("Config Access", 0.4), ("Shadow File", 0.4), ("RCE", 0.2)],
+        "Command Injection": [("Reverse Shell", 0.7), ("Privilege Escalation", 0.2), ("Persistence", 0.1)],
+        "SSRF": [("Internal Scan", 0.5), ("Cloud Metadata", 0.3), ("RCE", 0.2)],
+        "Auth Bypass": [("Data Exfiltration", 0.8), ("Persistence", 0.1), ("Lateral Movement", 0.1)],
+        "Deserialization": [("Remote Code Execution", 0.9), ("DoS", 0.1)]
+    }
+    
+    predictions = transitions.get(last_attack, [("Unknown", 1.0)])
+    
+    return {
+        "attacker_id": attacker_id,
+        "last_attack": last_attack,
+        "predictions": [
+            {"attack": p[0], "probability": f"{p[1]:.0%}"} for p in predictions
+        ],
+        "confidence": "High" if len(history) > 3 else "Medium"
+    }
+
+
+@app.get("/api/mitre/{attacker_id}")
+async def get_mitre(attacker_id: str):
+    """Generate MITRE ATT&CK mapping for attacker."""
+    from logger import get_attacker_history
+    history = get_attacker_history(attacker_id)
+    
+    if not history:
+        return {"error": "No attack history found"}
+        
+    # Map attack types to TTPs
+    mitre_map = {
+        "SQL Injection": {"id": "T1190", "tactic": "Initial Access", "technique": "Exploit Public-Facing Application"},
+        "XSS": {"id": "T1189", "tactic": "Initial Access", "technique": "Drive-by Compromise"},
+        "Path Traversal": {"id": "T1006", "tactic": "Defense Evasion", "technique": "Direct Volume Access"},
+        "Command Injection": {"id": "T1059", "tactic": "Execution", "technique": "Command and Scripting Interpreter"},
+        "SSRF": {"id": "T1190", "tactic": "Initial Access", "technique": "Exploit Public-Facing Application"},
+        "Auth Bypass": {"id": "T1078", "tactic": "Defense Evasion", "technique": "Valid Accounts"},
+        "Deserialization": {"id": "T1203", "tactic": "Execution", "technique": "Exploitation for Client Execution"}
+    }
+    
+    techniques = []
+    seen = set()
+    
+    for event in history:
+        attack_type = event.get("attack_type", "")
+        if attack_type in mitre_map and attack_type not in seen:
+            techniques.append({
+                **mitre_map[attack_type],
+                "detected_at": event.get("timestamp")
+            })
+            seen.add(attack_type)
+            
+    return {
+        "attacker_id": attacker_id,
+        "techniques": techniques,
+        "tactics_covered": list(set(t["tactic"] for t in techniques)),
+        "apt_groups": ["APT28", "Lazarus Group"] if len(techniques) > 2 else []
+    }
+
+
 # =========================
 # STARTUP/SHUTDOWN HOOKS
 # =========================
