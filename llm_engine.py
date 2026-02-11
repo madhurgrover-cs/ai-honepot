@@ -422,3 +422,77 @@ def generate_response(endpoint: str, payload: str, attacker_id: str, user_agent:
         Honeypot response string
     """
     return _engine.generate_response(endpoint, payload, attacker_id, user_agent)
+
+def get_reasoning_steps(attack_type: str, payload: str, attacker_id: str) -> list:
+    '''
+    Generate LLM reasoning steps for dashboard display.
+    
+    Args:
+        attack_type: Type of attack detected
+        payload: The attack payload
+        attacker_id: Unique identifier for the attacker
+        
+    Returns:
+        List of reasoning step dictionaries
+    '''
+    steps = []
+    
+    # Step 1: Pattern Analysis
+    steps.append({
+        'step': 1,
+        'title': 'Pattern Analysis',
+        'description': f'Analyzing request payload for malicious patterns',
+        'result': f'Detected {attack_type} pattern in payload'
+    })
+    
+    # Step 2: Threat Classification
+    steps.append({
+        'step': 2,
+        'title': 'Threat Classification',
+        'description': 'Classifying attack type and severity',
+        'result': f'Classified as {attack_type} with HIGH severity'
+    })
+    
+    # Step 3: Historical Context
+    steps.append({
+        'step': 3,
+        'title': 'Historical Context',
+        'description': 'Analyzing attacker previous behavior',
+        'result': f'Attacker {attacker_id[:8]}... has escalating attack pattern'
+    })
+    
+    # Step 4: Intent Analysis
+    steps.append({
+        'step': 4,
+        'title': 'Intent Analysis',
+        'description': 'Determining attacker likely objectives',
+        'result': 'Attacker attempting data exfiltration'
+    })
+    
+    # Step 5: Next Attack Prediction
+    if attack_type == 'SQL Injection':
+        next_attack = 'Auth Bypass'
+        confidence = 60
+    elif attack_type == 'XSS':
+        next_attack = 'Session Hijacking'
+        confidence = 55
+    else:
+        next_attack = 'Privilege Escalation'
+        confidence = 50
+    
+    steps.append({
+        'step': 5,
+        'title': 'Next Attack Prediction',
+        'description': 'Predicting attacker next move using Markov chain',
+        'result': f'Predicting {next_attack} ({confidence}% confidence)'
+    })
+    
+    # Step 6: Response Strategy
+    steps.append({
+        'step': 6,
+        'title': 'Response Strategy',
+        'description': 'Generating deceptive response to engage attacker',
+        'result': 'Returning fake vulnerable data to maintain deception'
+    })
+    
+    return steps

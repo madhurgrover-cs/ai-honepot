@@ -229,8 +229,18 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
         llm_response=result
     )
     
-    # Broadcast to demo dashboard
+    # Broadcast to demo dashboard with LLM reasoning and predictions
     try:
+        # Get LLM reasoning steps
+        from llm_engine import get_reasoning_steps
+        reasoning_steps = get_reasoning_steps(attack_type, payload, attacker_id)
+        
+        # Get prediction data
+        prediction_data = get_prediction_summary(attacker_id)
+        
+        # Get MITRE mapping
+        mitre_data = get_mitre_summary(attacker_id)
+        
         await broadcast_demo_update({
             "type": "attack",
             "attacker_id": attacker_id,
@@ -240,7 +250,10 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
             "payload": payload,
             "timestamp": datetime.now().isoformat(),
             "threat_level": str(threat_profile.threat_level).split('.')[-1] if threat_profile else "MEDIUM",
-            "skill_level": str(profile.skill_level).split('.')[-1] if profile else "UNKNOWN"
+            "skill_level": str(profile.skill_level).split('.')[-1] if profile else "UNKNOWN",
+            "llm_reasoning": reasoning_steps,
+            "prediction": prediction_data,
+            "mitre": mitre_data
         })
     except Exception as e:
         print(f"[ERROR] Failed to broadcast to demo dashboard: {e}")
