@@ -1005,14 +1005,81 @@ def get_demo_dashboard_html() -> str:
             console.log('Received attack data:', data);
             
             if (data.type === 'attack') {
-                // Log the full data for debugging
-                console.log('Attack Type:', data.attack_type);
-                console.log('LLM Reasoning:', data.llm_reasoning);
-                console.log('Prediction:', data.prediction);
-                console.log('MITRE:', data.mitre);
+                // Update attack counter
+                const totalAttacksEl = document.getElementById('total-attacks');
+                if (totalAttacksEl) {
+                    const currentCount = parseInt(totalAttacksEl.textContent) || 0;
+                    totalAttacksEl.textContent = currentCount + 1;
+                }
                 
-                // The dashboard will update via the existing update functions
-                // that are called by the Attack Simulator buttons
+                // Update current attacker
+                const currentAttackerEl = document.getElementById('current-attacker');
+                if (currentAttackerEl && data.attacker_id) {
+                    currentAttackerEl.textContent = data.attacker_id.substring(0, 8) + '...';
+                }
+                
+                // Update threat level
+                const threatLevelEl = document.getElementById('threat-level');
+                if (threatLevelEl && data.threat_level) {
+                    threatLevelEl.textContent = data.threat_level;
+                }
+                
+                // Update skill level
+                const skillLevelEl = document.getElementById('skill-level');
+                if (skillLevelEl && data.skill_level) {
+                    skillLevelEl.textContent = data.skill_level;
+                }
+                
+                // Update LLM Thinking if available
+                if (data.llm_reasoning && data.llm_reasoning.length > 0) {
+                    const llmThinkingEl = document.getElementById('llm-thinking');
+                    if (llmThinkingEl) {
+                        llmThinkingEl.innerHTML = '';
+                        data.llm_reasoning.forEach(step => {
+                            const stepDiv = document.createElement('div');
+                            stepDiv.style.cssText = 'margin-bottom: 15px; padding: 15px; background: rgba(0, 212, 255, 0.1); border-left: 3px solid #00d4ff; border-radius: 5px;';
+                            stepDiv.innerHTML = `
+                                <div style="color: #00d4ff; font-weight: bold; margin-bottom: 5px;">Step ${step.step}: ${step.title}</div>
+                                <div style="color: #aaa; margin-bottom: 5px;">${step.description}</div>
+                                <div style="color: #00ff41;">→ ${step.result}</div>
+                            `;
+                            llmThinkingEl.appendChild(stepDiv);
+                        });
+                    }
+                }
+                
+                // Update Prediction if available
+                if (data.prediction && data.prediction.next_attacks && data.prediction.next_attacks.length > 0) {
+                    const predictionDisplayEl = document.getElementById('prediction-display');
+                    if (predictionDisplayEl) {
+                        const topPrediction = data.prediction.next_attacks[0];
+                        predictionDisplayEl.innerHTML = `
+                            <div style="padding: 20px; background: rgba(0, 212, 255, 0.1); border: 2px solid #00d4ff; border-radius: 8px;">
+                                <h3 style="color: #00ff41; margin: 0 0 10px 0;">Most Likely Next Attack</h3>
+                                <div style="font-size: 1.5em; color: #ffffff; font-weight: bold; margin-bottom: 10px;">${topPrediction.attack_type}</div>
+                                <div style="color: #00d4ff; font-size: 1.2em;">Probability: ${topPrediction.probability}%</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Update MITRE if available
+                if (data.mitre && data.mitre.techniques && data.mitre.techniques.length > 0) {
+                    const mitreDisplayEl = document.getElementById('mitre-display');
+                    if (mitreDisplayEl) {
+                        mitreDisplayEl.innerHTML = '';
+                        data.mitre.techniques.slice(0, 5).forEach(technique => {
+                            const techDiv = document.createElement('div');
+                            techDiv.style.cssText = 'margin-bottom: 10px; padding: 12px; background: rgba(0, 0, 0, 0.3); border-left: 3px solid #e74c3c; border-radius: 5px;';
+                            techDiv.innerHTML = `
+                                <div style="color: #e74c3c; font-weight: bold;">${technique.technique_id}</div>
+                                <div style="color: #fff; margin: 5px 0;">${technique.technique_name}</div>
+                                <div style="color: #aaa; font-size: 0.9em;">${technique.tactic}</div>
+                            `;
+                            mitreDisplayEl.appendChild(techDiv);
+                        });
+                    }
+                }
             }
         };
         
