@@ -1005,75 +1005,14 @@ def get_demo_dashboard_html() -> str:
             console.log('Received attack data:', data);
             
             if (data.type === 'attack') {
-                // Update attack counter
-                attackCount++;
-                document.getElementById('attack-count').textContent = attackCount;
+                // Log the full data for debugging
+                console.log('Attack Type:', data.attack_type);
+                console.log('LLM Reasoning:', data.llm_reasoning);
+                console.log('Prediction:', data.prediction);
+                console.log('MITRE:', data.mitre);
                 
-                // Update attacker ID
-                document.getElementById('attacker-id').textContent = data.attacker_id.substring(0, 8) + '...';
-                
-                // Update threat and skill levels
-                document.getElementById('threat-level').textContent = data.threat_level || 'MEDIUM';
-                document.getElementById('skill-level').textContent = data.skill_level || 'NOVICE';
-                
-                // Add to attack feed
-                const feed = document.getElementById('attack-feed');
-                const attackDiv = document.createElement('div');
-                attackDiv.className = 'attack-item';
-                attackDiv.innerHTML = `
-                    <div class="attack-time">${new Date().toLocaleTimeString()}</div>
-                    <div class="attack-type">${data.attack_type}</div>
-                    <div class="attack-payload">${escapeHtml(data.payload)}</div>
-                    <div class="attack-ip">IP: ${data.ip}</div>
-                `;
-                feed.insertBefore(attackDiv, feed.firstChild);
-                
-                // Update LLM Reasoning if available
-                if (data.llm_reasoning && data.llm_reasoning.length > 0) {
-                    const reasoningDiv = document.getElementById('llm-reasoning');
-                    reasoningDiv.innerHTML = '';
-                    data.llm_reasoning.forEach(step => {
-                        const stepDiv = document.createElement('div');
-                        stepDiv.className = 'reasoning-step';
-                        stepDiv.innerHTML = `
-                            <div class="step-number">Step ${step.step}: ${step.title}</div>
-                            <div class="step-description">${step.description}</div>
-                            <div class="step-result">→ ${step.result}</div>
-                        `;
-                        reasoningDiv.appendChild(stepDiv);
-                    });
-                }
-                
-                // Update Prediction if available
-                if (data.prediction) {
-                    const predictionDiv = document.getElementById('prediction-content');
-                    if (data.prediction.next_attacks && data.prediction.next_attacks.length > 0) {
-                        const topPrediction = data.prediction.next_attacks[0];
-                        predictionDiv.innerHTML = `
-                            <div class="prediction-item">
-                                <div class="prediction-attack">${topPrediction.attack_type}</div>
-                                <div class="prediction-confidence">${topPrediction.probability}% confidence</div>
-                                <div class="prediction-reasoning">${topPrediction.reasoning || 'Based on attack pattern analysis'}</div>
-                            </div>
-                        `;
-                    }
-                }
-                
-                // Update MITRE if available
-                if (data.mitre && data.mitre.techniques && data.mitre.techniques.length > 0) {
-                    const mitreDiv = document.getElementById('mitre-content');
-                    mitreDiv.innerHTML = '';
-                    data.mitre.techniques.slice(0, 5).forEach(technique => {
-                        const techDiv = document.createElement('div');
-                        techDiv.className = 'mitre-technique';
-                        techDiv.innerHTML = `
-                            <div class="technique-id">${technique.technique_id}</div>
-                            <div class="technique-name">${technique.technique_name}</div>
-                            <div class="technique-tactic">${technique.tactic}</div>
-                        `;
-                        mitreDiv.appendChild(techDiv);
-                    });
-                }
+                // The dashboard will update via the existing update functions
+                // that are called by the Attack Simulator buttons
             }
         };
         
