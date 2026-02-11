@@ -177,10 +177,23 @@ class HoneypotEngine:
         if attack_type == "SQL Injection":
             return self._handle_sqli(attacker, payload, attacker_id, behavioral_profile.skill_level)
         
+        if attack_type == "XSS":
+            return self._handle_xss(attacker, payload, attacker_id)
+        
+        if attack_type == "Command Injection":
+            return self._handle_command_injection(attacker, payload, attacker_id)
+        
+        if attack_type == "Path Traversal":
+            return self._handle_path_traversal(attacker, payload, attacker_id)
+        
+        if attack_type == "SSRF":
+            return self._handle_ssrf(attacker, payload, attacker_id)
+        
         if endpoint == "/admin":
             return self._handle_admin_endpoint(attacker, payload, attacker_id)
         
-        return "200 OK"
+        # Default: Return fake search results
+        return "Search results: 0 items found"
     
     def _handle_sqli(self, attacker: AttackerState, payload: str, attacker_id: str,
                      skill_level: SkillLevel) -> str:
@@ -276,6 +289,116 @@ class HoneypotEngine:
         
         # Generic admin commands
         return process_admin_command(payload)
+    
+    def _handle_xss(self, attacker: AttackerState, payload: str, attacker_id: str) -> str:
+        """Handle XSS attack with realistic vulnerable response."""
+        attacker.log_event("XSS attempt detected")
+        
+        # Return fake search results that appear to reflect the payload
+        # This makes it look like the XSS worked
+        return f"""
+        <html>
+        <body>
+            <h2>Search Results</h2>
+            <p>You searched for: {payload}</p>
+            <div class="results">
+                <p>Found 3 results</p>
+                <div>Product: Premium Account - $99/month</div>
+                <div>Product: Enterprise License - $499/month</div>
+                <div>Product: Developer API Access - $29/month</div>
+            </div>
+        </body>
+        </html>
+        """
+    
+    def _handle_command_injection(self, attacker: AttackerState, payload: str, attacker_id: str) -> str:
+        """Handle command injection with fake system output."""
+        attacker.log_event("Command injection detected")
+        
+        # Return fake command output that looks real
+        if "passwd" in payload or "shadow" in payload:
+            return """root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+admin:x:1000:1000:Admin User:/home/admin:/bin/bash
+dbuser:x:1001:1001:Database User:/home/dbuser:/bin/bash"""
+        
+        elif "whoami" in payload or "id" in payload:
+            return "www-data"
+        
+        elif "ls" in payload:
+            return """config.php
+database.sql
+backup.tar.gz
+.env
+admin_panel.php
+user_data.csv"""
+        
+        else:
+            return "Command executed successfully"
+    
+    def _handle_path_traversal(self, attacker: AttackerState, payload: str, attacker_id: str) -> str:
+        """Handle path traversal with fake file contents."""
+        attacker.log_event("Path traversal detected")
+        
+        # Return fake sensitive file contents
+        if "passwd" in payload:
+            return """root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+admin:x:1000:1000:Admin User:/home/admin:/bin/bash"""
+        
+        elif "config" in payload or ".env" in payload:
+            return """DB_HOST=localhost
+DB_USER=admin
+DB_PASS=P@ssw0rd123!
+DB_NAME=corporate_db
+API_KEY=sk_live_abc123xyz789
+SECRET_KEY=super_secret_key_2024
+AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE"""
+        
+        elif "shadow" in payload:
+            return """root:$6$rounds=656000$YQKTxifDGWnM0Zqr$:19752:0:99999:7:::
+admin:$6$rounds=656000$abcdefghijklmnop$:19752:0:99999:7:::"""
+        
+        else:
+            return "File not found"
+    
+    def _handle_ssrf(self, attacker: AttackerState, payload: str, attacker_id: str) -> str:
+        """Handle SSRF with fake internal service responses."""
+        attacker.log_event("SSRF attempt detected")
+        
+        # Return fake cloud metadata or internal service data
+        if "169.254.169.254" in payload or "metadata" in payload:
+            return """{
+  "instance-id": "i-1234567890abcdef0",
+  "instance-type": "t3.large",
+  "local-ipv4": "172.31.45.123",
+  "public-ipv4": "54.123.45.67",
+  "security-credentials": {
+    "AccessKeyId": "ASIATESTACCESSKEY123",
+    "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    "Token": "AQoDYXdzEJr...<truncated>..."
+  }
+}"""
+        
+        elif "localhost" in payload or "127.0.0.1" in payload:
+            return """HTTP/1.1 200 OK
+Server: Apache/2.4.41
+Content-Type: text/html
+
+<html><body>
+<h1>Internal Admin Panel</h1>
+<p>Welcome to the internal administration interface</p>
+<ul>
+  <li><a href="/admin/users">User Management</a></li>
+  <li><a href="/admin/logs">System Logs</a></li>
+  <li><a href="/admin/database">Database Console</a></li>
+</ul>
+</body></html>"""
+        
+        else:
+            return "Connection successful"
 
 
 # =========================
