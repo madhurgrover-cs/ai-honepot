@@ -442,6 +442,23 @@ async def dashboard():
     return get_dashboard_html()
 
 
+@app.get("/demo", response_class=HTMLResponse)
+async def demo_dashboard_endpoint(request: Request) -> HTMLResponse:
+    """Serve the demonstration dashboard."""
+    return HTMLResponse(content=get_demo_dashboard_html())
+
+
+@app.get("/controller", response_class=HTMLResponse)
+async def demo_controller_endpoint(request: Request) -> HTMLResponse:
+    """Serve the demo controller interface."""
+    from pathlib import Path
+    controller_file = Path("demo_controller.html")
+    if controller_file.exists():
+        return HTMLResponse(content=controller_file.read_text())
+    else:
+        return HTMLResponse(content="<h1>Demo controller not found</h1>", status_code=404)
+
+
 @app.websocket("/ws/dashboard")
 async def websocket_dashboard(websocket: WebSocket):
     """WebSocket for real-time dashboard updates."""
