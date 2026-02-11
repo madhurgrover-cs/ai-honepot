@@ -118,6 +118,22 @@ def create_response(content: str, attacker_id: str) -> Response:
     return response
 
 
+def get_mitre_summary(attacker_id: str) -> dict:
+    """
+    Get MITRE ATT&CK summary for attacker.
+    Wrapper function for WebSocket broadcasting.
+    """
+    try:
+        ttps = get_attacker_ttps(attacker_id)
+        return {
+            "techniques": ttps if ttps else [],
+            "count": len(ttps) if ttps else 0
+        }
+    except Exception as e:
+        print(f"[ERROR] Failed to get MITRE summary: {e}")
+        return {"techniques": [], "count": 0}
+
+
 def build_payload(request: Request, query_param: Optional[str] = None) -> str:
     """
     Build payload string from request data.
