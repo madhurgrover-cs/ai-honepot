@@ -1030,6 +1030,32 @@ def get_demo_dashboard_html() -> str:
                     skillLevelEl.textContent = data.skill_level;
                 }
                 
+                // Update current attack display in Live Monitor tab
+                const currentAttackEl = document.getElementById('current-attack');
+                if (currentAttackEl) {
+                    currentAttackEl.innerHTML = `
+                        <div style="padding: 20px; background: rgba(231, 76, 60, 0.1); border: 2px solid #e74c3c; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <div style="color: #aaa; font-size: 0.9em;">Attack Type</div>
+                                    <div style="color: #e74c3c; font-size: 1.3em; font-weight: bold;">${data.attack_type || 'Unknown'}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #aaa; font-size: 0.9em;">Source IP</div>
+                                    <div style="color: #00d4ff; font-size: 1.1em;">${data.ip || 'Unknown'}</div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <div style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">Payload</div>
+                                <div style="color: #00ff41; font-family: monospace; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; word-break: break-all;">${data.payload || 'N/A'}</div>
+                            </div>
+                            <div style="color: #aaa; font-size: 0.85em;">
+                                Detected at: ${new Date().toLocaleTimeString()}
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 // Update LLM Thinking if available
                 if (data.llm_reasoning && data.llm_reasoning.length > 0) {
                     const llmThinkingEl = document.getElementById('llm-thinking');
