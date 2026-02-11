@@ -113,29 +113,39 @@ def create_live_demo_pdf():
     story.append(Paragraph("1. Start the server", step_style))
     story.append(Paragraph("<font name='Courier' size=8>python app.py</font>", url_style))
     
-    story.append(Paragraph("2. Open the demo dashboard in browser", step_style))
-    story.append(Paragraph("<font name='Courier' size=8>http://localhost:8000/demo</font>", url_style))
-    
-    story.append(Paragraph("3. Position windows side-by-side", step_style))
+    story.append(Paragraph("2. Open the Demo Controller (Primary Method)", step_style))
+    story.append(Paragraph("<font name='Courier' size=8>http://localhost:8000/controller</font>", url_style))
     story.append(Paragraph(
-        "Left: Browser with attack URLs | Right: Dashboard showing real-time updates",
+        "For a smooth demo, use this controller to execute attacks with one click.",
         body_style
     ))
     
-    story.append(Paragraph("4. Have this PDF ready for reference", step_style))
+    story.append(Paragraph("3. Open Dashboard (Can do from Controller)", step_style))
+    story.append(Paragraph("<font name='Courier' size=8>http://localhost:8000/demo</font>", url_style))
+    
+    story.append(Paragraph("4. Position windows side-by-side", step_style))
+    story.append(Paragraph(
+        "Left: Demo Controller | Right: Live Dashboard showing real-time updates",
+        body_style
+    ))
+    
+    story.append(Paragraph("5. Have this PDF ready as a script/backup", step_style))
     story.append(Spacer(1, 0.2*inch))
     
     # Demo Flow Overview
     story.append(Paragraph("DEMO FLOW (7-10 minutes)", section_style))
     story.append(Paragraph(
-        "You will demonstrate 7 attack types in sequence. For each attack:",
+        "You will demonstrate 7 attack types in sequence.",
         body_style
     ))
-    story.append(Paragraph("• Copy the URL and paste in browser", body_style))
-    story.append(Paragraph("• Point out the attack payload in the URL", body_style))
-    story.append(Paragraph("• Show the real-time dashboard update", body_style))
-    story.append(Paragraph("• Explain what the honeypot detected", body_style))
-    story.append(Paragraph("• Highlight the AI prediction (if applicable)", body_style))
+    story.append(Paragraph("<b>Primary Method:</b> Click buttons on the Demo Controller (Recommended)", body_style))
+    story.append(Paragraph("<b>Backup Method:</b> Copy-paste URLs from this PDF if controller fails", body_style))
+    story.append(Paragraph("<b>For each attack:</b>", body_style))
+    story.append(Paragraph("• Click attack button (or navigate to URL)", body_style))
+    story.append(Paragraph("• Point out the detected attack on the dashboard", body_style))
+    story.append(Paragraph("• Highlight the new <b>LLM Reasoning</b> steps", body_style))
+    story.append(Paragraph("• Show the <b>Attacker Profile</b> updating", body_style))
+    story.append(Paragraph("• Explain the <b>Threat Intelligence</b> score", body_style))
     
     story.append(PageBreak())
     
@@ -156,16 +166,15 @@ def create_live_demo_pdf():
     ))
     
     story.append(Paragraph("Step 3: Point out dashboard changes", step_style))
-    story.append(Paragraph("✓ Attack counter increments", dashboard_style))
-    story.append(Paragraph("✓ Attack type shows 'SQL Injection'", dashboard_style))
-    story.append(Paragraph("✓ Threat level updates (likely MEDIUM)", dashboard_style))
-    story.append(Paragraph("✓ Timeline shows new entry with timestamp", dashboard_style))
-    story.append(Paragraph("✓ MITRE technique: T1190 (Exploit Public-Facing Application)", dashboard_style))
+    story.append(Paragraph("✓ <b>LLM Reasoning:</b> Shows step-by-step analysis of the payload", dashboard_style))
+    story.append(Paragraph("✓ <b>Attacker Profile:</b> Shows 'NOVICE' skill level and 'SQLMap' tool detection", dashboard_style))
+    story.append(Paragraph("✓ <b>Threat Intelligence:</b> Updates threat score (likely >60)", dashboard_style))
+    story.append(Paragraph("✓ <b>Intelligence Analysis:</b> Maps to MITRE T1190", dashboard_style))
     
-    story.append(Paragraph("Step 4: Show AI prediction", step_style))
+    story.append(Paragraph("Step 4: Highlight the LLM Analysis", step_style))
     story.append(Paragraph(
-        "\"Now watch the AI prediction. Based on this SQL injection, our Markov chain model predicts "
-        "the attacker will likely try admin access next with 60% probability.\"",
+        "\"Notice the 'LLM Reasoning Process' panel. It's not just logging the attack; it's explaining "
+        "WHY it's an attack: 'Detected SQL metacharacters', 'Analyzing intent', and 'Recommended response'.\"",
         body_style
     ))
     
