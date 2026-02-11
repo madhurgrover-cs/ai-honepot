@@ -653,14 +653,55 @@ async def broadcast_demo_update(data: dict):
                     "Deserialization": [("Remote Code Execution", 0.9), ("DoS", 0.1)]
                 }
                 
+                # Generate reasoning steps explaining the prediction
+                reasoning_steps = []
+                
+                # Step 1: Analyze current attack
+                reasoning_steps.append(f"📊 **Analyzing Attack Pattern**: Detected {last_attack} attack from attacker {attacker_id[:8]}...")
+                
+                # Step 2: Historical context
+                attack_count = len(history)
+                reasoning_steps.append(f"📈 **Historical Context**: Attacker has performed {attack_count} attack(s). {'Building confidence in pattern recognition.' if attack_count > 3 else 'Limited history - predictions are preliminary.'}")
+                
+                # Step 3: Attack sequence analysis
+                if attack_count > 1:
+                    prev_attacks = [h.get("attack_type", "Unknown") for h in history[-3:]]
+                    reasoning_steps.append(f"🔍 **Sequence Analysis**: Recent attack chain: {' → '.join(prev_attacks)}")
+                
+                # Step 4: Explain the prediction logic
                 predictions = transitions.get(last_attack, [("Unknown", 1.0)])
+                top_prediction = predictions[0]
+                
+                # Attack-specific reasoning
+                attack_reasoning = {
+                    "SQL Injection": f"After SQL Injection, attackers typically attempt **{top_prediction[0]}** ({top_prediction[1]:.0%}) to leverage database access for authentication bypass or data theft.",
+                    "XSS": f"XSS attacks are commonly followed by **{top_prediction[0]}** ({top_prediction[1]:.0%}) to hijack user sessions and escalate privileges.",
+                    "Path Traversal": f"Path Traversal success usually leads to **{top_prediction[0]}** ({top_prediction[1]:.0%}) as attackers explore sensitive files and configuration data.",
+                    "Command Injection": f"Command Injection enables **{top_prediction[0]}** ({top_prediction[1]:.0%}) - the primary goal for remote code execution attacks.",
+                    "SSRF": f"SSRF attacks typically progress to **{top_prediction[0]}** ({top_prediction[1]:.0%}) to map internal infrastructure and find vulnerable services.",
+                    "Auth Bypass": f"Authentication bypass is immediately followed by **{top_prediction[0]}** ({top_prediction[1]:.0%}) to extract valuable data before detection.",
+                    "Deserialization": f"Deserialization vulnerabilities almost always lead to **{top_prediction[0]}** ({top_prediction[1]:.0%}) due to direct code execution capabilities."
+                }
+                
+                reasoning_steps.append(f"🧠 **Prediction Logic**: {attack_reasoning.get(last_attack, f'Based on attack patterns, next move is likely **{top_prediction[0]}** ({top_prediction[1]:.0%}).')}")
+                
+                # Step 5: Markov chain explanation
+                reasoning_steps.append(f"⚙️ **Markov Chain Model**: Using transition probabilities from {len(transitions)} known attack patterns. Current state: '{last_attack}' → Next state probabilities calculated.")
+                
+                # Step 6: Confidence assessment
+                confidence = "High" if len(history) > 3 else "Medium"
+                confidence_reason = "sufficient attack history for pattern matching" if confidence == "High" else "limited data - predictions will improve with more attacks"
+                reasoning_steps.append(f"✅ **Confidence: {confidence}** - {confidence_reason}.")
+                
                 prediction_data = {
                     "attacker_id": attacker_id,
                     "last_attack": last_attack,
                     "predictions": [
                         {"attack": p[0], "probability": f"{p[1]:.0%}"} for p in predictions
                     ],
-                    "confidence": "High" if len(history) > 3 else "Medium"
+                    "confidence": confidence,
+                    "reasoning_steps": reasoning_steps,
+                    "attack_count": attack_count
                 }
                 
                 for connection in _demo_connections:

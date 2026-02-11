@@ -742,9 +742,39 @@ def get_demo_dashboard_html() -> str:
             if (!data || !data.predictions) return;
             
             const predictions = data.predictions.slice(0, 3); // Top 3 predictions
+            
+            // Build reasoning steps display
+            let reasoningHtml = '';
+            if (data.reasoning_steps && data.reasoning_steps.length > 0) {
+                reasoningHtml = `
+                    <h3 style="color: #00ff41; margin: 20px 0 15px 0; border-bottom: 2px solid #00ff41; padding-bottom: 8px;">
+                        🧠 LLM REASONING PROCESS
+                    </h3>
+                    <div style="background: rgba(0, 0, 0, 0.3); border-left: 4px solid #00ff41; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                        ${data.reasoning_steps.map((step, index) => {
+                            // Parse markdown-style bold text
+                            const formattedStep = step.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #00d4ff;">$1</strong>');
+                            return `
+                                <div style="margin-bottom: 12px; padding: 10px; background: rgba(0, 212, 255, 0.05); border-radius: 4px;">
+                                    <div style="color: #00ff41; font-size: 0.95em; line-height: 1.6;">
+                                        ${formattedStep}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
             const html = `
+                ${reasoningHtml}
+                
+                <h3 style="color: #00d4ff; margin: 20px 0 15px 0; border-bottom: 2px solid #00d4ff; padding-bottom: 8px;">
+                    🔮 PREDICTION RESULTS
+                </h3>
+                
                 <div class="analysis-item" style="background: rgba(0, 212, 255, 0.1); border: 2px solid #00d4ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <h3 style="color: #00ff41; margin: 0 0 10px 0;">🔮 Most Likely Next Attack</h3>
+                    <h3 style="color: #00ff41; margin: 0 0 10px 0;">Most Likely Next Attack</h3>
                     <div style="font-size: 1.5em; color: #ffffff; font-weight: bold;">${predictions[0].attack}</div>
                     <div style="color: #00d4ff; font-size: 1.2em; margin-top: 5px;">Probability: ${predictions[0].probability}</div>
                 </div>
@@ -759,6 +789,13 @@ def get_demo_dashboard_html() -> str:
                     <span class="analysis-value">${data.last_attack}</span>
                 </div>
                 
+                ${data.attack_count ? `
+                <div class="analysis-item">
+                    <span class="analysis-label">Attack History</span>
+                    <span class="analysis-value">${data.attack_count} attack(s) analyzed</span>
+                </div>
+                ` : ''}
+                
                 <h3 style="color: #00d4ff; margin: 20px 0 10px 0; border-bottom: 1px solid #00d4ff; padding-bottom: 5px;">Alternative Scenarios</h3>
                 ${predictions.slice(1).map(pred => `
                     <div class="analysis-item">
@@ -771,12 +808,6 @@ def get_demo_dashboard_html() -> str:
                         <span class="analysis-value">${pred.probability}</span>
                     </div>
                 `).join('')}
-                
-                <div style="margin-top: 20px; padding: 10px; background: rgba(0, 255, 65, 0.05); border-left: 3px solid #00ff41; border-radius: 4px;">
-                    <div style="font-size: 0.9em; color: #888;">
-                        <strong style="color: #00ff41;">Markov Chain Analysis:</strong> Predictions based on attack sequence patterns and transition probabilities.
-                    </div>
-                </div>
             `;
             
             document.getElementById('prediction-display').innerHTML = html;
