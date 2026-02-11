@@ -360,6 +360,78 @@ def get_demo_dashboard_html() -> str:
         ::-webkit-scrollbar-thumb:hover {
             background: #00d4ff;
         }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 65, 0.2);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            color: #00d4ff;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+        
+        .tab-btn.active {
+            background: rgba(0, 255, 65, 0.2);
+            border-color: #00ff41;
+            color: #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .attack-btn {
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+        }
+        
+        .attack-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .attack-btn:active {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -371,6 +443,15 @@ def get_demo_dashboard_html() -> str:
                 Real-Time Attack Analysis & Intelligence Processing
             </p>
         </header>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('live-monitor')">📡 Live Monitor</button>
+            <button class="tab-btn" onclick="switchTab('ai-intelligence')">🧠 AI Intelligence</button>
+            <button class="tab-btn" onclick="switchTab('mitre-analysis')">🎯 MITRE Analysis</button>
+            <button class="tab-btn" onclick="switchTab('threat-profile')">👤 Threat Profile</button>
+            <button class="tab-btn" onclick="switchTab('attack-simulator')" style="color: #e74c3c;">⚡ Attack Simulator</button>
+        </div>
         
         <div class="stats-grid">
             <div class="stat-card">
@@ -391,70 +472,189 @@ def get_demo_dashboard_html() -> str:
             </div>
         </div>
         
-        <div class="main-grid">
-            <!-- Current Attack -->
+        <!-- TAB 1: Live Monitor -->
+        <div id="live-monitor" class="tab-content active">
+            <div class="main-grid">
+                <!-- Current Attack -->
+                <div class="panel full-width">
+                    <h2>🎯 INCOMING ATTACK</h2>
+                    <div id="current-attack">
+                        <div class="waiting-message">
+                            Waiting for attack...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attack Timeline -->
+                <div class="panel full-width">
+                    <h2>📊 ATTACK TIMELINE</h2>
+                    <div class="timeline" id="attack-timeline">
+                        <div class="waiting-message">
+                            Attack history will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 2: AI Intelligence -->
+        <div id="ai-intelligence" class="tab-content">
+            <div class="main-grid">
+                <!-- LLM Thinking Process -->
+                <div class="panel full-width">
+                    <h2>🧠 LLM REASONING PROCESS</h2>
+                    <div id="llm-thinking">
+                        <div class="waiting-message">
+                            LLM analysis will appear here...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Prediction Engine -->
+                <div class="panel full-width">
+                    <h2>🔮 NEXT ATTACK PREDICTION</h2>
+                    <div id="prediction-display">
+                        <div class="waiting-message">
+                            Prediction data will appear after first attack...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 3: MITRE Analysis -->
+        <div id="mitre-analysis" class="tab-content">
+            <div class="main-grid">
+                <!-- MITRE ATT&CK Mapping -->
+                <div class="panel full-width">
+                    <h2>🎯 MITRE ATT&CK TECHNIQUES</h2>
+                    <div id="mitre-display">
+                        <div class="waiting-message">
+                            MITRE mapping will appear after first attack...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 4: Threat Profile -->
+        <div id="threat-profile" class="tab-content">
+            <div class="main-grid">
+                <!-- Behavioral Profile -->
+                <div class="panel">
+                    <h2>👤 ATTACKER PROFILE</h2>
+                    <div id="behavioral-profile">
+                        <div class="waiting-message">
+                            Behavioral analysis will appear here...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Threat Intelligence -->
+                <div class="panel">
+                    <h2>⚠️ THREAT INTELLIGENCE</h2>
+                    <div id="threat-intel">
+                        <div class="waiting-message">
+                            Threat data will appear here...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Intelligence Analysis -->
+                <div class="panel full-width">
+                    <h2>🔍 INTELLIGENCE ANALYSIS</h2>
+                    <div id="intelligence-analysis">
+                        <div class="waiting-message">
+                            Intelligence data will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAB 5: ATTACK SIMULATOR -->
+        <div id="attack-simulator" class="tab-content">
             <div class="panel full-width">
-                <h2>🎯 INCOMING ATTACK</h2>
-                <div id="current-attack">
-                    <div class="waiting-message">
-                        Waiting for attack...
-                    </div>
+                <h2>⚡ ATTACK SIMULATOR</h2>
+                <p style="color: #888; margin-bottom: 20px;">Trigger simulated attacks to test the honeypot's detection and analysis capabilities.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                    <button class="attack-btn" onclick="triggerAttack('sql')" style="background: linear-gradient(135deg, #e74c3c, #c0392b); border: 2px solid #e74c3c;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">💉</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">SQL Injection</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Database exploitation</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('xss')" style="background: linear-gradient(135deg, #e67e22, #d35400); border: 2px solid #e67e22;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📜</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">XSS Attack</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Cross-site scripting</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('path')" style="background: linear-gradient(135deg, #f39c12, #e67e22); border: 2px solid #f39c12;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📂</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Path Traversal</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">File system access</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('cmd')" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); border: 2px solid #9b59b6;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">💻</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Command Injection</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Remote code execution</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('ssrf')" style="background: linear-gradient(135deg, #3498db, #2980b9); border: 2px solid #3498db;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">☁️</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">SSRF</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Server-side request forgery</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('auth')" style="background: linear-gradient(135deg, #1abc9c, #16a085); border: 2px solid #1abc9c;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🔓</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Auth Bypass</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Authentication bypass</div>
+                    </button>
+                    
+                    <button class="attack-btn" onclick="triggerAttack('deser')" style="background: linear-gradient(135deg, #e74c3c, #c0392b); border: 2px solid #e74c3c;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📦</div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Deserialization</div>
+                        <div style="font-size: 0.85em; color: #ddd; margin-top: 5px;">Object injection</div>
+                    </button>
                 </div>
-            </div>
-            
-            <!-- LLM Thinking Process -->
-            <div class="panel">
-                <h2>🧠 LLM REASONING PROCESS</h2>
-                <div id="llm-thinking">
-                    <div class="waiting-message">
-                        LLM analysis will appear here...
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Intelligence Analysis -->
-            <div class="panel">
-                <h2>🔍 INTELLIGENCE ANALYSIS</h2>
-                <div id="intelligence-analysis">
-                    <div class="waiting-message">
-                        Intelligence data will appear here...
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Behavioral Profile -->
-            <div class="panel">
-                <h2>👤 ATTACKER PROFILE</h2>
-                <div id="behavioral-profile">
-                    <div class="waiting-message">
-                        Behavioral analysis will appear here...
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Threat Intelligence -->
-            <div class="panel">
-                <h2>⚠️ THREAT INTELLIGENCE</h2>
-                <div id="threat-intel">
-                    <div class="waiting-message">
-                        Threat data will appear here...
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Attack Timeline -->
-            <div class="panel full-width">
-                <h2>📊 ATTACK TIMELINE</h2>
-                <div class="timeline" id="attack-timeline">
-                    <div class="waiting-message">
-                        Attack history will appear here...
-                    </div>
+                
+                <div id="sim-status" style="margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; color: #00ff41; min-height: 50px; display: flex; align-items: center; justify-content: center;">
+                    Ready to simulate attacks...
                 </div>
             </div>
         </div>
     </div>
     
     <script>
+        // Tab switching function
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(tabId);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Activate corresponding button by finding it with the onclick attribute
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabId}'`)) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+        
         const ws = new WebSocket('ws://localhost:8000/ws/demo');
         let attackCount = 0;
         let attackHistory = [];
@@ -472,6 +672,10 @@ def get_demo_dashboard_html() -> str:
                 updateBehavioral(data.profile);
             } else if (data.type === 'threat_intel') {
                 updateThreatIntel(data.intel);
+            } else if (data.type === 'prediction') {
+                updatePrediction(data.data);
+            } else if (data.type === 'mitre') {
+                updateMITRE(data.data);
             }
         };
         
@@ -615,6 +819,120 @@ def get_demo_dashboard_html() -> str:
             document.getElementById('threat-intel').innerHTML = html;
         }
         
+        function updatePrediction(data) {
+            if (!data || !data.predictions) return;
+            
+            const predictions = data.predictions.slice(0, 3); // Top 3 predictions
+            
+            // Build reasoning steps display
+            let reasoningHtml = '';
+            if (data.reasoning_steps && data.reasoning_steps.length > 0) {
+                reasoningHtml = `
+                    <h3 style="color: #00ff41; margin: 20px 0 15px 0; border-bottom: 2px solid #00ff41; padding-bottom: 8px;">
+                        🧠 LLM REASONING PROCESS
+                    </h3>
+                    <div style="background: rgba(0, 0, 0, 0.3); border-left: 4px solid #00ff41; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                        ${data.reasoning_steps.map((step, index) => {
+                            // Parse markdown-style bold text
+                            const formattedStep = step.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #00d4ff;">$1</strong>');
+                            return `
+                                <div style="margin-bottom: 12px; padding: 10px; background: rgba(0, 212, 255, 0.05); border-radius: 4px;">
+                                    <div style="color: #00ff41; font-size: 0.95em; line-height: 1.6;">
+                                        ${formattedStep}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            const html = `
+                ${reasoningHtml}
+                
+                <h3 style="color: #00d4ff; margin: 20px 0 15px 0; border-bottom: 2px solid #00d4ff; padding-bottom: 8px;">
+                    🔮 PREDICTION RESULTS
+                </h3>
+                
+                <div class="analysis-item" style="background: rgba(0, 212, 255, 0.1); border: 2px solid #00d4ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h3 style="color: #00ff41; margin: 0 0 10px 0;">Most Likely Next Attack</h3>
+                    <div style="font-size: 1.5em; color: #ffffff; font-weight: bold;">${predictions[0].attack}</div>
+                    <div style="color: #00d4ff; font-size: 1.2em; margin-top: 5px;">Probability: ${predictions[0].probability}</div>
+                </div>
+                
+                <div class="analysis-item">
+                    <span class="analysis-label">Confidence Level</span>
+                    <span class="analysis-value">${data.confidence}</span>
+                </div>
+                
+                <div class="analysis-item">
+                    <span class="analysis-label">Based On</span>
+                    <span class="analysis-value">${data.last_attack}</span>
+                </div>
+                
+                ${data.attack_count ? `
+                <div class="analysis-item">
+                    <span class="analysis-label">Attack History</span>
+                    <span class="analysis-value">${data.attack_count} attack(s) analyzed</span>
+                </div>
+                ` : ''}
+                
+                <h3 style="color: #00d4ff; margin: 20px 0 10px 0; border-bottom: 1px solid #00d4ff; padding-bottom: 5px;">Alternative Scenarios</h3>
+                ${predictions.slice(1).map(pred => `
+                    <div class="analysis-item">
+                        <span class="analysis-label">${pred.attack}</span>
+                        <div style="flex: 1; margin: 0 10px;">
+                            <div style="background: rgba(0, 0, 0, 0.3); border-radius: 10px; overflow: hidden; height: 20px;">
+                                <div style="background: linear-gradient(90deg, #00d4ff, #00ff41); height: 100%; width: ${pred.probability}; border-radius: 10px; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <span class="analysis-value">${pred.probability}</span>
+                    </div>
+                `).join('')}
+            `;
+            
+            document.getElementById('prediction-display').innerHTML = html;
+        }
+        
+        function updateMITRE(data) {
+            if (!data || !data.techniques || data.techniques.length === 0) return;
+            
+            const html = `
+                <div style="margin-bottom: 20px;">
+                    <div class="analysis-item">
+                        <span class="analysis-label">Techniques Detected</span>
+                        <span class="analysis-value">${data.techniques.length}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Tactics Covered</span>
+                        <span class="analysis-value">${data.tactics_covered.join(', ')}</span>
+                    </div>
+                    ${data.apt_groups && data.apt_groups.length > 0 ? `
+                    <div class="analysis-item">
+                        <span class="analysis-label">Potential APT Groups</span>
+                        <span class="analysis-value" style="color: #e74c3c;">${data.apt_groups.join(', ')}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <h3 style="color: #00d4ff; margin: 20px 0 10px 0; border-bottom: 1px solid #00d4ff; padding-bottom: 5px;">ATT&CK Techniques</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    ${data.techniques.map(tech => `
+                        <div style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff; border-radius: 8px; padding: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="background: #00d4ff; color: #0a0e27; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">${tech.id}</span>
+                                <span style="background: rgba(0, 255, 65, 0.2); color: #00ff41; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">${tech.tactic}</span>
+                            </div>
+                            <div style="color: #ffffff; font-weight: bold; margin-bottom: 5px;">${tech.technique}</div>
+                            <div style="color: #888; font-size: 0.85em;">Detected: ${new Date(tech.detected_at).toLocaleTimeString()}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('mitre-display').innerHTML = html;
+        }
+        
         function updateTimeline() {
             const html = attackHistory.map(attack => `
                 <div class="timeline-item">
@@ -638,6 +956,44 @@ def get_demo_dashboard_html() -> str:
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Attack simulator function
+        async function triggerAttack(attackType) {
+            const status = document.getElementById('sim-status');
+            const attackMap = {
+                'sql': { url: '/search?q=%27%20OR%201=1--', name: 'SQL Injection' },
+                'xss': { url: '/search?q=%3Cscript%3Ealert(%27XSS%27)%3C/script%3E', name: 'XSS Attack' },
+                'path': { url: '/files?path=../../../../etc/passwd', name: 'Path Traversal' },
+                'cmd': { url: '/admin?cmd=cat%20/etc/shadow', name: 'Command Injection' },
+                'ssrf': { url: '/api/fetch?url=http://169.254.169.254/latest/meta-data/', name: 'SSRF' },
+                'auth': { url: '/admin?user=admin&sess=adm_123', name: 'Auth Bypass' },
+                'deser': { url: '/api/data?obj=rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcA', name: 'Deserialization' }
+            };
+            
+            const attack = attackMap[attackType];
+            if (!attack) {
+                status.innerHTML = '❌ Unknown attack type';
+                status.style.color = '#e74c3c';
+                return;
+            }
+            
+            status.innerHTML = `⏳ Launching ${attack.name}...`;
+            status.style.color = '#f39c12';
+            
+            try {
+                const response = await fetch(attack.url);
+                status.innerHTML = `✅ ${attack.name} triggered! Check the Live Monitor tab for results.`;
+                status.style.color = '#00ff41';
+                
+                // Auto-switch to Live Monitor tab after 1 second
+                setTimeout(() => {
+                    switchTab('live-monitor');
+                }, 1000);
+            } catch (error) {
+                status.innerHTML = `❌ Error: ${error.message}`;
+                status.style.color = '#e74c3c';
+            }
         }
         
         ws.onopen = function() {

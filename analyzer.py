@@ -15,6 +15,9 @@ class AttackType(Enum):
     XSS = "XSS"
     PATH_TRAVERSAL = "PATH_TRAVERSAL"
     COMMAND_INJECTION = "CMD_INJECTION"
+    SSRF = "SSRF"
+    AUTH_BYPASS = "Authentication Bypass"
+    DESERIALIZATION = "Insecure Deserialization"
 
 
 @dataclass
@@ -115,6 +118,56 @@ class AttackAnalyzer:
                     "`ls",
                 ]
             ),
+            
+            # Server-Side Request Forgery (SSRF)
+            AttackPattern(
+                attack_type=AttackType.SSRF,
+                signatures=[
+                    "http://localhost",
+                    "http://127.0.0.1",
+                    "http://169.254.169.254",  # AWS metadata endpoint
+                    "http://metadata.google.internal",  # GCP metadata
+                    "file://",
+                    "gopher://",
+                    "dict://",
+                    "ftp://localhost",
+                    "@localhost",
+                    "@127.0.0.1",
+                    "localhost:",
+                    "0.0.0.0",
+                ]
+            ),
+            
+            # Authentication Bypass
+            AttackPattern(
+                attack_type=AttackType.AUTH_BYPASS,
+                signatures=[
+                    "admin:admin",
+                    "root:root",
+                    "test:test",
+                    "guest:guest",
+                    "default:default",
+                    "password:password",
+                    "user:user",
+                    "administrator:administrator",
+                ]
+            ),
+            
+            # Insecure Deserialization
+            AttackPattern(
+                attack_type=AttackType.DESERIALIZATION,
+                signatures=[
+                    "__reduce__",
+                    "pickle.loads",
+                    "yaml.load",
+                    "eval(",
+                    "exec(",
+                    "os.system",
+                    "subprocess.",
+                    "__import__",
+                    "compile(",
+                ]
+            ),
         ]
     
     def analyze(self, payload: str) -> AttackType:
@@ -180,10 +233,13 @@ if __name__ == "__main__":
         ("<script>alert('xss')</script>", "XSS"),
         ("../../../etc/passwd", "PATH_TRAVERSAL"),
         (";cat /etc/passwd", "CMD_INJECTION"),
+        ("http://localhost:8080/admin", "SSRF"),
+        ("admin:admin", "Authentication Bypass"),
+        ("pickle.loads(data)", "Insecure Deserialization"),
         ("normal query string", "NORMAL"),
     ]
     
     for payload, expected in test_payloads:
         result = analyze_request(payload)
-        status = "✓" if result == expected else "✗"
-        print(f"{status} {payload[:30]:30} → {result}")
+        status = "PASS" if result == expected else "FAIL"
+        print(f"{status} {payload[:30]:30} -> {result}")
