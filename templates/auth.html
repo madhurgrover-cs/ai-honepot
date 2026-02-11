@@ -4,44 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Corporate Portal</title>
+    <title>Login - Corporate Portal</title>
     <link rel="stylesheet" href="/static/css/portal.css">
 </head>
 
 <body>
     <div class="auth-container">
         <div class="auth-card">
-            <h2>{{ title }}</h2>
-            <form action="/dashboard" method="get">
+            <h2>Login</h2>
+            <form action="/search" method="get">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="text" id="email" name="email" class="form-control"
-                        placeholder="Enter email or username" required>
+                    <input type="text" id="email" name="q" class="form-control" placeholder="Enter email" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" class="form-control" required>
                 </div>
 
-                {% if is_register %}
-                <div class="form-group">
-                    <label for="confirm_password">Confirm Password</label>
-                    <input type="password" id="confirm_password" class="form-control" required>
-                </div>
-                {% endif %}
-
-                <button type="submit" class="btn-primary">
-                    {% if is_register %}Register Account{% else %}Login{% endif %}
-                </button>
+                <button type="submit" class="btn-primary">Login</button>
             </form>
-
-            <div class="auth-footer">
-                {% if is_register %}
-                Already have an account? <a href="/login">Login here</a>
-                {% else %}
-                <a href="#">Forgot password?</a> | <a href="/register">Register new account</a>
-                {% endif %}
-            </div>
         </div>
     </div>
 </body>
