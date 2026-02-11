@@ -558,10 +558,7 @@ async def websocket_demo(websocket: WebSocket):
 async def broadcast_demo_update(data: dict):
     """Broadcast update to all demo dashboard connections with enhanced analytics."""
     import random
-    import asyncio # Fix for name 'asyncio' is not defined error
-    
-    print(f"[DEBUG] broadcast_demo_update called with type: {data.get('type')}")
-    print(f"[DEBUG] Number of demo connections: {len(_demo_connections)}")
+    import asyncio
     
     # Enhance data with analytics if it's an attack
     if data.get("type") == "attack":
