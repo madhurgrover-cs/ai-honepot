@@ -591,6 +591,10 @@ def get_demo_dashboard_html() -> str:
                 updateBehavioral(data.profile);
             } else if (data.type === 'threat_intel') {
                 updateThreatIntel(data.intel);
+            } else if (data.type === 'prediction') {
+                updatePrediction(data.data);
+            } else if (data.type === 'mitre') {
+                updateMITRE(data.data);
             }
         };
         
@@ -732,6 +736,89 @@ def get_demo_dashboard_html() -> str:
             `;
             
             document.getElementById('threat-intel').innerHTML = html;
+        }
+        
+        function updatePrediction(data) {
+            if (!data || !data.predictions) return;
+            
+            const predictions = data.predictions.slice(0, 3); // Top 3 predictions
+            const html = `
+                <div class="analysis-item" style="background: rgba(0, 212, 255, 0.1); border: 2px solid #00d4ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h3 style="color: #00ff41; margin: 0 0 10px 0;">🔮 Most Likely Next Attack</h3>
+                    <div style="font-size: 1.5em; color: #ffffff; font-weight: bold;">${predictions[0].attack}</div>
+                    <div style="color: #00d4ff; font-size: 1.2em; margin-top: 5px;">Probability: ${predictions[0].probability}</div>
+                </div>
+                
+                <div class="analysis-item">
+                    <span class="analysis-label">Confidence Level</span>
+                    <span class="analysis-value">${data.confidence}</span>
+                </div>
+                
+                <div class="analysis-item">
+                    <span class="analysis-label">Based On</span>
+                    <span class="analysis-value">${data.last_attack}</span>
+                </div>
+                
+                <h3 style="color: #00d4ff; margin: 20px 0 10px 0; border-bottom: 1px solid #00d4ff; padding-bottom: 5px;">Alternative Scenarios</h3>
+                ${predictions.slice(1).map(pred => `
+                    <div class="analysis-item">
+                        <span class="analysis-label">${pred.attack}</span>
+                        <div style="flex: 1; margin: 0 10px;">
+                            <div style="background: rgba(0, 0, 0, 0.3); border-radius: 10px; overflow: hidden; height: 20px;">
+                                <div style="background: linear-gradient(90deg, #00d4ff, #00ff41); height: 100%; width: ${pred.probability}; border-radius: 10px; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <span class="analysis-value">${pred.probability}</span>
+                    </div>
+                `).join('')}
+                
+                <div style="margin-top: 20px; padding: 10px; background: rgba(0, 255, 65, 0.05); border-left: 3px solid #00ff41; border-radius: 4px;">
+                    <div style="font-size: 0.9em; color: #888;">
+                        <strong style="color: #00ff41;">Markov Chain Analysis:</strong> Predictions based on attack sequence patterns and transition probabilities.
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('prediction-display').innerHTML = html;
+        }
+        
+        function updateMITRE(data) {
+            if (!data || !data.techniques || data.techniques.length === 0) return;
+            
+            const html = `
+                <div style="margin-bottom: 20px;">
+                    <div class="analysis-item">
+                        <span class="analysis-label">Techniques Detected</span>
+                        <span class="analysis-value">${data.techniques.length}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Tactics Covered</span>
+                        <span class="analysis-value">${data.tactics_covered.join(', ')}</span>
+                    </div>
+                    ${data.apt_groups && data.apt_groups.length > 0 ? `
+                    <div class="analysis-item">
+                        <span class="analysis-label">Potential APT Groups</span>
+                        <span class="analysis-value" style="color: #e74c3c;">${data.apt_groups.join(', ')}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <h3 style="color: #00d4ff; margin: 20px 0 10px 0; border-bottom: 1px solid #00d4ff; padding-bottom: 5px;">ATT&CK Techniques</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    ${data.techniques.map(tech => `
+                        <div style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff; border-radius: 8px; padding: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="background: #00d4ff; color: #0a0e27; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">${tech.id}</span>
+                                <span style="background: rgba(0, 255, 65, 0.2); color: #00ff41; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">${tech.tactic}</span>
+                            </div>
+                            <div style="color: #ffffff; font-weight: bold; margin-bottom: 5px;">${tech.technique}</div>
+                            <div style="color: #888; font-size: 0.85em;">Detected: ${new Date(tech.detected_at).toLocaleTimeString()}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('mitre-display').innerHTML = html;
         }
         
         function updateTimeline() {

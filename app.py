@@ -633,6 +633,94 @@ async def broadcast_demo_update(data: dict):
                     })
                 except:
                     pass
+        
+        # Send AI prediction
+        await asyncio.sleep(0.3)
+        try:
+            from logger import get_attacker_history
+            history = get_attacker_history(attacker_id)
+            if history:
+                last_attack = history[-1].get("attack_type", "Unknown")
+                
+                # Simple Markov chain prediction
+                transitions = {
+                    "SQL Injection": [("Auth Bypass", 0.6), ("Data Exfiltration", 0.3), ("Command Injection", 0.1)],
+                    "XSS": [("Session Hijacking", 0.5), ("Phishing", 0.3), ("CSRF", 0.2)],
+                    "Path Traversal": [("Config Access", 0.4), ("Shadow File", 0.4), ("RCE", 0.2)],
+                    "Command Injection": [("Reverse Shell", 0.7), ("Privilege Escalation", 0.2), ("Persistence", 0.1)],
+                    "SSRF": [("Internal Scan", 0.5), ("Cloud Metadata", 0.3), ("RCE", 0.2)],
+                    "Auth Bypass": [("Data Exfiltration", 0.8), ("Persistence", 0.1), ("Lateral Movement", 0.1)],
+                    "Deserialization": [("Remote Code Execution", 0.9), ("DoS", 0.1)]
+                }
+                
+                predictions = transitions.get(last_attack, [("Unknown", 1.0)])
+                prediction_data = {
+                    "attacker_id": attacker_id,
+                    "last_attack": last_attack,
+                    "predictions": [
+                        {"attack": p[0], "probability": f"{p[1]:.0%}"} for p in predictions
+                    ],
+                    "confidence": "High" if len(history) > 3 else "Medium"
+                }
+                
+                for connection in _demo_connections:
+                    if connection not in disconnected:
+                        try:
+                            await connection.send_json({
+                                "type": "prediction",
+                                "data": prediction_data
+                            })
+                        except:
+                            pass
+        except Exception as e:
+            print(f"[WARNING] Failed to generate prediction: {e}")
+        
+        # Send MITRE ATT&CK mapping
+        await asyncio.sleep(0.3)
+        try:
+            from logger import get_attacker_history
+            history = get_attacker_history(attacker_id)
+            if history:
+                mitre_map = {
+                    "SQL Injection": {"id": "T1190", "tactic": "Initial Access", "technique": "Exploit Public-Facing Application"},
+                    "XSS": {"id": "T1189", "tactic": "Initial Access", "technique": "Drive-by Compromise"},
+                    "Path Traversal": {"id": "T1006", "tactic": "Defense Evasion", "technique": "Direct Volume Access"},
+                    "Command Injection": {"id": "T1059", "tactic": "Execution", "technique": "Command and Scripting Interpreter"},
+                    "SSRF": {"id": "T1190", "tactic": "Initial Access", "technique": "Exploit Public-Facing Application"},
+                    "Auth Bypass": {"id": "T1078", "tactic": "Defense Evasion", "technique": "Valid Accounts"},
+                    "Deserialization": {"id": "T1203", "tactic": "Execution", "technique": "Exploitation for Client Execution"}
+                }
+                
+                techniques = []
+                seen = set()
+                
+                for event in history:
+                    event_attack_type = event.get("attack_type", "")
+                    if event_attack_type in mitre_map and event_attack_type not in seen:
+                        techniques.append({
+                            **mitre_map[event_attack_type],
+                            "detected_at": event.get("timestamp")
+                        })
+                        seen.add(event_attack_type)
+                
+                mitre_data = {
+                    "attacker_id": attacker_id,
+                    "techniques": techniques,
+                    "tactics_covered": list(set(t["tactic"] for t in techniques)),
+                    "apt_groups": ["APT28", "Lazarus Group"] if len(techniques) > 2 else []
+                }
+                
+                for connection in _demo_connections:
+                    if connection not in disconnected:
+                        try:
+                            await connection.send_json({
+                                "type": "mitre",
+                                "data": mitre_data
+                            })
+                        except:
+                            pass
+        except Exception as e:
+            print(f"[WARNING] Failed to generate MITRE mapping: {e}")
     else:
         # Non-attack data, just broadcast normally
         disconnected = []
