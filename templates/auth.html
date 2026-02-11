@@ -1,48 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - Corporate Portal</title>
-    <link rel="stylesheet" href="/static/css/portal.css">
+    <title>Login</title>
 </head>
 
 <body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <h2>{{ title }}</h2>
-            <form action="/dashboard" method="get">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" class="form-control" required>
-                </div>
-
-                {% if is_register %}
-                <div class="form-group">
-                    <label for="confirm_password">Confirm Password</label>
-                    <input type="password" id="confirm_password" class="form-control" required>
-                </div>
-                {% endif %}
-
-                <button type="submit" class="btn-primary">
-                    {% if is_register %}Register Account{% else %}Login{% endif %}
-                </button>
-            </form>
-
-            <div class="auth-footer">
-                {% if is_register %}
-                Already have an account? <a href="/login">Login here</a>
-                {% else %}
-                <a href="#">Forgot password?</a> | <a href="/register">Register new account</a>
-                {% endif %}
-            </div>
+    <h1>Login</h1>
+    <form action="/search" method="get">
+        <div>
+            <label>Email:</label><br>
+            <input type="text" name="q" style="width: 300px; padding: 8px;">
         </div>
-    </div>
+        <br>
+        <div>
+            <label>Password:</label><br>
+            <input type="password" name="password" style="width: 300px; padding: 8px;">
+        </div>
+        <br>
+        <button type="submit" style="padding: 10px 20px;">Login</button>
+    </form>
 </body>
 
 </html>
