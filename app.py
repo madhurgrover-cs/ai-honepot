@@ -9,6 +9,8 @@ from datetime import datetime
 
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from llm_engine import generate_response
 from analyzer import analyze_request
@@ -20,7 +22,7 @@ from deception_engine import check_fake_security
 # Advanced features
 from ml_classifier import train_ml_classifier, predict_attack_type, detect_anomaly, track_credential_attempt
 from external_threat_intel import lookup_threat_intel, add_threat, configure_threat_intel
-from dashboard import get_dashboard_html, add_attack_to_dashboard, broadcast_attack, broadcast_stats, get_active_connections
+from dashboard import add_attack_to_dashboard, broadcast_attack, broadcast_stats, get_active_connections
 from counter_intelligence import poison_tool_response, fingerprint_attacker, inject_fake_vulnerability, add_evasion_techniques
 from fingerprinting import track_browser_fingerprint, find_related_attackers, get_fingerprinting_script
 from alerts import send_attack_alert, send_brute_force_alert, send_coordinated_attack_alert, send_anomaly_alert, send_threat_ip_alert, configure_alerts, AlertSeverity
@@ -45,6 +47,12 @@ app = FastAPI(
     description="AI-powered deception honeypot",
     version="1.0.0"
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Initialize templates
+templates = Jinja2Templates(directory="templates")
 
 
 # =========================
@@ -237,6 +245,15 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
     except Exception as e:
         print(f"[ERROR] Failed to broadcast to demo dashboard: {e}")
     
+    # If it's a browser request (HTML in accept header), render template
+    if "text/html" in request.headers.get("accept", ""):
+        return templates.TemplateResponse("search.html", {
+            "request": request,
+            "q": q,
+            "results": result if attack_type == "SQL Injection" else None,
+            "active_page": "search"
+        })
+
     return create_response(result, attacker_id)
 
 
@@ -296,6 +313,7 @@ async def admin_endpoint(request: Request) -> Response:
         result = "[Security Notice: Multiple attack vectors detected]\n\n" + result
     
     # Log the attack
+    # Log the attack
     log_attack(
         attacker_id=attacker_id,
         ip=request.client.host if request.client else "unknown",
@@ -304,49 +322,48 @@ async def admin_endpoint(request: Request) -> Response:
         payload=payload,
         llm_response=result
     )
+
+    # If it's a browser request (HTML in accept header), render template
+    if "text/html" in request.headers.get("accept", ""):
+        return templates.TemplateResponse("admin.html", {
+            "request": request,
+            "result": result
+        })
     
     return create_response(result, attacker_id)
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index() -> HTMLResponse:
+async def index(request: Request) -> HTMLResponse:
     """
-    Landing page with links to vulnerable endpoints.
-    
-    Provides a realistic-looking entry point for attackers to discover
-    and begin exploiting the honeypot.
+    Landing page - Redirect to login.
     """
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Corporate Portal</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            h1 { color: #333; }
-            .search-box { margin: 20px 0; }
-            input[type="text"] { padding: 8px; width: 300px; }
-            button { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; }
-            .links { margin-top: 30px; }
-            .links a { display: block; margin: 10px 0; color: #007bff; text-decoration: none; }
-        </style>
-    </head>
-    <body>
-        <h1>Welcome to Corporate Portal</h1>
-        <div class="search-box">
-            <form action="/search" method="get">
-                <input type="text" name="q" placeholder="Search...">
-                <button type="submit">Search</button>
-            </form>
-        </div>
-        <div class="links">
-            <a href="/admin">Admin Panel</a>
-            <a href="/search?q=test">Example Search</a>
-        </div>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+    return templates.TemplateResponse("auth.html", {"request": request, "title": "Login", "is_register": False})
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("auth.html", {"request": request, "title": "Login", "is_register": False})
+
+
+@app.get("/register", response_class=HTMLResponse)
+async def register(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("auth.html", {"request": request, "title": "Register", "is_register": True})
+
+
+@app.get("/logs", response_class=HTMLResponse)
+async def logs(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("page.html", {"request": request, "title": "System Logs", "type": "logs", "active_page": "logs"})
+
+
+@app.get("/backups", response_class=HTMLResponse)
+async def backups(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("page.html", {"request": request, "title": "Backups", "type": "backups", "active_page": "backups"})
+
+
+@app.get("/timeline", response_class=HTMLResponse)
+async def timeline(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("page.html", {"request": request, "title": "Audit Timeline", "type": "timeline", "active_page": "timeline"})
 
 
 @app.get("/health")
@@ -393,9 +410,12 @@ async def internal_error_handler(request: Request, exc) -> PlainTextResponse:
 # ADVANCED ENDPOINTS
 # =========================
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard():
+async def dashboard(request: Request):
     """Real-time attack monitoring dashboard."""
-    return get_dashboard_html()
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "active_page": "dashboard"
+    })
 
 
 @app.websocket("/ws/dashboard")
