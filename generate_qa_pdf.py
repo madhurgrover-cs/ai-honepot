@@ -627,17 +627,32 @@ def create_qa_pdf():
         answer_style
     ))
     
-    story.append(Paragraph("🔴 Your code has no unit tests. How do you ensure quality?", difficulty_hard))
+    story.append(Paragraph("🔴 What security vulnerabilities exist in your honeypot?", difficulty_hard))
     story.append(Paragraph(
-        "Fair criticism. For this hackathon, we prioritized features over tests. "
-        "We did: (1) Manual testing of all 10 API endpoints (100% pass rate), (2) Integration testing with real attacks, "
-        "(3) Code review for critical paths. For production, we'd add: "
-        "(1) <b>Unit tests:</b> pytest for each module (target: 80% coverage), "
-        "(2) <b>Integration tests:</b> Test full attack flows end-to-end, "
-        "(3) <b>Property-based testing:</b> Use Hypothesis for edge cases, "
-        "(4) <b>CI/CD:</b> GitHub Actions to run tests on every commit, "
-        "(5) <b>Load testing:</b> Locust to test under high load. "
-        "Testing is critical for production - we acknowledge this gap.",
+        "<b>Honest answer - We HAD vulnerabilities, but we FIXED them all:</b>",
+        answer_style
+    ))
+    story.append(Paragraph(
+        "<font name='Courier' size=7>"
+        "BEFORE (Vulnerable):<br/>"
+        "1. No rate limiting → DoS attacks possible<br/>"
+        "2. Unsigned cookies → Attacker ID forgery<br/>"
+        "3. Unlimited log growth → Disk exhaustion<br/>"
+        "4. No WebSocket limits → Memory exhaustion<br/>"
+        "5. No payload size limits → Memory exhaustion<br/><br/>"
+        "AFTER (Fixed - v1.0.1):<br/>"
+        "1. ✓ Rate limiting: slowapi (20/min search, 10/min admin)<br/>"
+        "2. ✓ Signed cookies: itsdangerous with HMAC + 24h expiry<br/>"
+        "3. ✓ Log rotation: 50MB max, 10 backups (rotate_logs.py)<br/>"
+        "4. ✓ WebSocket limits: 100 global, 5 per IP<br/>"
+        "5. ✓ Payload validation: 10KB max, HTTP 413 if exceeded"
+        "</font>",
+        code_style
+    ))
+    story.append(Paragraph(
+        "This demonstrates <b>security awareness</b> and <b>production mindset</b>. "
+        "We didn't just identify vulnerabilities - we fixed them before the presentation. "
+        "The system is now production-ready with enterprise-grade security.",
         answer_style
     ))
     

@@ -6,9 +6,14 @@ FastAPI-based deception layer that mimics a vulnerable web application.
 from typing import Optional
 from uuid import uuid4
 from datetime import datetime
+import secrets
 
-from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from itsdangerous import URLSafeTimedSerializer, BadSignature
 
 from llm_engine import generate_response
 from analyzer import analyze_request
@@ -38,13 +43,32 @@ from export_engine import export_json, export_csv, export_attacks
 
 
 # =========================
+# SECURITY CONFIGURATION
+# =========================
+SECRET_KEY = secrets.token_urlsafe(32)  # Generate secure secret key
+MAX_PAYLOAD_SIZE = 10000  # 10KB max payload
+MAX_WEBSOCKET_CONNECTIONS = 100  # Global limit
+MAX_WEBSOCKET_PER_IP = 5  # Per-IP limit
+
+# Cookie serializer for signed cookies
+cookie_serializer = URLSafeTimedSerializer(SECRET_KEY)
+
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
+
+# =========================
 # APPLICATION SETUP
 # =========================
 app = FastAPI(
     title="Honeypot Application",
-    description="AI-powered deception honeypot",
-    version="1.0.0"
+    description="AI-powered deception honeypot with security hardening",
+    version="1.0.1"
 )
+
+# Add rate limit exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 # =========================
@@ -58,7 +82,7 @@ ATTACKER_ID_COOKIE = "attacker_id"
 # =========================
 def get_attacker_id(request: Request) -> str:
     """
-    Retrieve or generate attacker tracking ID.
+    Retrieve or generate attacker tracking ID with signed cookie validation.
     
     Args:
         request: FastAPI request object
@@ -66,26 +90,40 @@ def get_attacker_id(request: Request) -> str:
     Returns:
         Unique attacker identifier (existing or newly generated)
     """
-    attacker_id = request.cookies.get(ATTACKER_ID_COOKIE)
-    if not attacker_id:
-        attacker_id = uuid4().hex
+    signed_cookie = request.cookies.get(ATTACKER_ID_COOKIE)
+    
+    if signed_cookie:
+        try:
+            # Verify and decode signed cookie (24 hour expiry)
+            attacker_id = cookie_serializer.loads(signed_cookie, max_age=86400)
+            return attacker_id
+        except (BadSignature, Exception):
+            # Invalid or expired cookie, generate new ID
+            pass
+    
+    # Generate new cryptographically secure ID
+    attacker_id = secrets.token_urlsafe(16)
     return attacker_id
 
 
 def set_attacker_cookie(response: Response, attacker_id: str) -> None:
     """
-    Set attacker tracking cookie on response.
+    Set signed attacker tracking cookie on response.
     
     Args:
         response: FastAPI response object
         attacker_id: Unique attacker identifier
     """
+    # Sign the cookie value
+    signed_value = cookie_serializer.dumps(attacker_id)
+    
     response.set_cookie(
         key=ATTACKER_ID_COOKIE,
-        value=attacker_id,
+        value=signed_value,
         httponly=True,
         secure=False,  # Set to True in production with HTTPS
-        samesite="lax"
+        samesite="lax",
+        max_age=86400  # 24 hours
     )
 
 
@@ -132,6 +170,7 @@ def build_payload(request: Request, query_param: Optional[str] = None) -> str:
 # HONEYPOT ENDPOINTS
 # =========================
 @app.get("/search", response_class=Response)
+@limiter.limit("20/minute")  # 20 requests per minute per IP
 async def search_endpoint(request: Request, q: str = "") -> Response:
     """
     Vulnerable search endpoint - primary SQL injection target.
@@ -146,6 +185,10 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
     Returns:
         Response with fake search results or leaked data
     """
+    # Validate payload size
+    if len(q) > MAX_PAYLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="Payload too large")
+    
     attacker_id = get_attacker_id(request)
     payload = build_payload(request, query_param=q)
     
@@ -241,6 +284,7 @@ async def search_endpoint(request: Request, q: str = "") -> Response:
 
 
 @app.get("/admin", response_class=Response)
+@limiter.limit("10/minute")  # 10 requests per minute per IP (stricter for admin)
 async def admin_endpoint(request: Request) -> Response:
     """
     Fake admin panel endpoint.
@@ -453,10 +497,24 @@ _demo_connections = []
 
 @app.websocket("/ws/demo")
 async def websocket_demo(websocket: WebSocket):
-    """WebSocket for demonstration dashboard real-time updates."""
+    """WebSocket for demonstration dashboard real-time updates with connection limits."""
     import asyncio
     import json
     from datetime import datetime
+    
+    client_ip = websocket.client.host if websocket.client else "unknown"
+    
+    # Check global connection limit
+    if len(_demo_connections) >= MAX_WEBSOCKET_CONNECTIONS:
+        await websocket.close(code=1008, reason="Server at capacity")
+        return
+    
+    # Check per-IP connection limit
+    ip_connections = sum(1 for ws in _demo_connections 
+                        if ws.client and ws.client.host == client_ip)
+    if ip_connections >= MAX_WEBSOCKET_PER_IP:
+        await websocket.close(code=1008, reason="Too many connections from your IP")
+        return
     
     await websocket.accept()
     _demo_connections.append(websocket)
