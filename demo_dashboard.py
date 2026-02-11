@@ -647,8 +647,12 @@ def get_demo_dashboard_html() -> str:
                 selectedTab.classList.add('active');
             }
             
-            // Activate corresponding button
-            event.target.classList.add('active');
+            // Activate corresponding button by finding it with the onclick attribute
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabId}'`)) {
+                    btn.classList.add('active');
+                }
+            });
         }
         
         const ws = new WebSocket('ws://localhost:8000/ws/demo');
