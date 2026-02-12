@@ -1101,6 +1101,7 @@ def get_demo_dashboard_html() -> str:
                 }
                 
                 // Update MITRE if available
+                console.log('MITRE data:', data.mitre);
                 if (data.mitre && data.mitre.techniques && data.mitre.techniques.length > 0) {
                     const mitreDisplayEl = document.getElementById('mitre-display');
                     if (mitreDisplayEl) {
@@ -1115,6 +1116,16 @@ def get_demo_dashboard_html() -> str:
                             `;
                             mitreDisplayEl.appendChild(techDiv);
                         });
+                    }
+                } else if (data.mitre) {
+                    // Show message if MITRE data exists but no techniques
+                    const mitreDisplayEl = document.getElementById('mitre-display');
+                    if (mitreDisplayEl) {
+                        mitreDisplayEl.innerHTML = `
+                            <div style="padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; color: #aaa;">
+                                Building MITRE ATT&CK mapping... Attack type: ${data.attack_type || 'Unknown'}
+                            </div>
+                        `;
                     }
                 }
                 
