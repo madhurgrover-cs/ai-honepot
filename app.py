@@ -124,10 +124,27 @@ def get_mitre_summary(attacker_id: str) -> dict:
     Wrapper function for WebSocket broadcasting.
     """
     try:
-        ttps = get_attacker_ttps(attacker_id)
+        ttp_data = get_attacker_ttps(attacker_id)
+        
+        # Check if there's an error or no data
+        if "error" in ttp_data:
+            return {"techniques": [], "count": 0}
+        
+        # Flatten tactics_breakdown into a simple techniques array
+        techniques = []
+        if "tactics_breakdown" in ttp_data:
+            for tactic_name, tactic_techniques in ttp_data["tactics_breakdown"].items():
+                for tech in tactic_techniques:
+                    techniques.append({
+                        "technique_id": tech["technique_id"],
+                        "technique_name": tech["technique_name"],
+                        "tactic": tactic_name,
+                        "confidence": tech.get("confidence", "N/A")
+                    })
+        
         return {
-            "techniques": ttps if ttps else [],
-            "count": len(ttps) if ttps else 0
+            "techniques": techniques,
+            "count": len(techniques)
         }
     except Exception as e:
         print(f"[ERROR] Failed to get MITRE summary: {e}")
