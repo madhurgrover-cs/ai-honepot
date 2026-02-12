@@ -1075,15 +1075,26 @@ def get_demo_dashboard_html() -> str:
                 }
                 
                 // Update Prediction if available
-                if (data.prediction && data.prediction.next_attacks && data.prediction.next_attacks.length > 0) {
+                if (data.prediction && data.prediction.next_likely_vectors && data.prediction.next_likely_vectors.length > 0) {
                     const predictionDisplayEl = document.getElementById('prediction-display');
                     if (predictionDisplayEl) {
-                        const topPrediction = data.prediction.next_attacks[0];
+                        const topPrediction = data.prediction.next_likely_vectors[0];
                         predictionDisplayEl.innerHTML = `
                             <div style="padding: 20px; background: rgba(0, 212, 255, 0.1); border: 2px solid #00d4ff; border-radius: 8px;">
                                 <h3 style="color: #00ff41; margin: 0 0 10px 0;">Most Likely Next Attack</h3>
-                                <div style="font-size: 1.5em; color: #ffffff; font-weight: bold; margin-bottom: 10px;">${topPrediction.attack_type}</div>
-                                <div style="color: #00d4ff; font-size: 1.2em;">Probability: ${topPrediction.probability}%</div>
+                                <div style="font-size: 1.5em; color: #ffffff; font-weight: bold; margin-bottom: 10px;">${topPrediction.vector || 'Unknown'}</div>
+                                <div style="color: #00d4ff; font-size: 1.2em;">Probability: ${topPrediction.probability || 'N/A'}</div>
+                                <div style="color: #aaa; margin-top: 10px; font-size: 0.9em;">Current Stage: ${data.prediction.current_stage || 'Unknown'}</div>
+                                <div style="color: #aaa; font-size: 0.9em;">Predicted Goal: ${data.prediction.predicted_goal || 'Unknown'}</div>
+                            </div>
+                        `;
+                    }
+                } else if (data.prediction && !data.prediction.error) {
+                    const predictionDisplayEl = document.getElementById('prediction-display');
+                    if (predictionDisplayEl) {
+                        predictionDisplayEl.innerHTML = `
+                            <div style="padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; color: #aaa;">
+                                Building prediction model... More data needed.
                             </div>
                         `;
                     }
@@ -1174,8 +1185,8 @@ def get_demo_dashboard_html() -> str:
                             <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 10px;">Assessment</div>
                             <div style="color: #fff;">
                                 Attacker demonstrates ${data.skill_level || 'UNKNOWN'} skill level with ${data.threat_level || 'MEDIUM'} threat rating. 
-                                ${data.prediction && data.prediction.next_attacks && data.prediction.next_attacks.length > 0 ? 
-                                  'Predicted next attack: ' + data.prediction.next_attacks[0].attack_type : 
+                                ${data.prediction && data.prediction.next_likely_vectors && data.prediction.next_likely_vectors.length > 0 ? 
+                                  'Predicted next attack: ' + data.prediction.next_likely_vectors[0].vector : 
                                   'Monitoring for follow-up attacks.'}
                             </div>
                         </div>
